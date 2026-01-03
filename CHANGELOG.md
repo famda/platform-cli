@@ -1,6 +1,73 @@
 # CHANGELOG
 
 
+## v0.0.1 (2026-01-03)
+
+### Bug Fixes
+
+* fix: Use branch ref in release workflow to avoid detached HEAD (#11)
+
+* Initial plan
+
+* fix: Use branch ref instead of commit SHA to avoid detached HEAD in release workflow
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+---------
+
+Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Co-authored-by: famda <26621392+famda@users.noreply.github.com> ([`216f029`](https://github.com/famda/platform-cli/commit/216f0290b21a88baae70be3870af31c2e8eaefc7))
+
+### Unknown
+
+* Move PyInstaller artifact builds from release to CI workflow (#9)
+
+* Initial plan
+
+* feat: Add PyInstaller build to CI workflow and update release workflow
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* fix: Add workflow_conclusion and check_artifacts to ensure CI completes before downloading
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* fix: Limit Python version matrix to 3.12 only to fix build failures
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* fix: Update uv.lock to sync with pyproject.toml version
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Update .github/workflows/ci.yml
+
+Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>
+
+* fix: Use workflow_run trigger and add PyInstaller to dev dependencies
+
+- Change release workflow to trigger on CI workflow completion using workflow_run event
+- This ensures CI completes successfully before release starts
+- Add PyInstaller to dev dependencies in pyproject.toml for proper version tracking
+- Update uv.lock with PyInstaller and its dependencies
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* fix: Use correct workflow_run event properties for commit references
+
+- Use head_commit.id instead of head_branch for checkout ref
+- Use head_commit.id instead of head_sha for artifact download commit
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+---------
+
+Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+Co-authored-by: famda <filipe.a.m.rosa@hotmail.com>
+Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com> ([`707094b`](https://github.com/famda/platform-cli/commit/707094bdc82ab72deb46542ebe86246096dd3237))
+
+
 ## v0.0.0 (2026-01-03)
 
 ### Unknown
