@@ -89,6 +89,8 @@ jobs:
           commit: ${{ github.sha }}
           name: semantics-${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow_conclusion: success
+          check_artifacts: true
       
       # Upload the artifact to the GitHub Release
       - name: Upload artifact to release
