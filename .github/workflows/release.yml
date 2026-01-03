@@ -97,7 +97,7 @@ jobs:
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_commit.id }}
-          name: semantics-v.*-${{ matrix.platform }}-x86_64
+          name: semantics-v[0-9A-Za-z.+-]+-${{ matrix.platform }}-x86_64
           name_is_regexp: true
           path: artifacts/${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -108,7 +108,12 @@ jobs:
       - name: Rename artifact to release version
         run: |
           set -euo pipefail
-          ARTIFACT_PATH=$(find "artifacts/${{ matrix.platform }}" -name "semantics-v*-${{ matrix.platform }}-x86_64.zip" -print -quit)
+          ARTIFACT_DIR="artifacts/${{ matrix.platform }}"
+          if [ ! -d "$ARTIFACT_DIR" ]; then
+            echo "Artifact directory not found: $ARTIFACT_DIR"
+            exit 1
+          fi
+          ARTIFACT_PATH=$(find "$ARTIFACT_DIR" -name "semantics-v*-${{ matrix.platform }}-x86_64.zip" -print -quit)
           if [ -z "$ARTIFACT_PATH" ]; then
             echo "Artifact zip not found for platform ${{ matrix.platform }}"
             exit 1
