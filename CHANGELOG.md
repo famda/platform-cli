@@ -20,6 +20,51 @@ Co-authored-by: famda <26621392+famda@users.noreply.github.com> ([`216f029`](htt
 
 ### Unknown
 
+* Implement dynamic Git-based versioning with hatch-vcs and versioned release artifacts (#13)
+
+* Initial plan
+
+* Implement dynamic Git-based versioning with hatch-vcs
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Improve version test documentation and readability
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Update uv.lock to fix CI build failure
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Fix uv.lock version format to include date suffix
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Remove --locked flag from CI to support dynamic versioning
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Implement dynamic Git-based versioning with hatch-vcs
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Fix version test to support both 2-part and 3-part versions
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Add version numbers to release artifact filenames
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Use --frozen flag instead of regenerating lockfile for reproducible builds
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+---------
+
+Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Co-authored-by: famda <26621392+famda@users.noreply.github.com> ([`18504a4`](https://github.com/famda/platform-cli/commit/18504a43d1c615f268b892c732254b2433afd22d))
+
 * Move PyInstaller artifact builds from release to CI workflow (#9)
 
 * Initial plan
@@ -66,11 +111,6 @@ Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.c
 Co-authored-by: famda <26621392+famda@users.noreply.github.com>
 Co-authored-by: famda <filipe.a.m.rosa@hotmail.com>
 Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com> ([`707094b`](https://github.com/famda/platform-cli/commit/707094bdc82ab72deb46542ebe86246096dd3237))
-
-
-## v0.0.0 (2026-01-03)
-
-### Unknown
 
 * Fix YAML syntax error in release workflow from unindented heredoc content (#7)
 
