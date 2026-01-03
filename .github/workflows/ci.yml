@@ -108,26 +108,35 @@ jobs:
       - name: Build with PyInstaller
         run: uv run pyinstaller --onefile src/semantics/__main__.py --name semantics
       
+      # Get version from the package
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(uv run python -c "from semantics import __version__; print(__version__)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
+      
       # Create zip (Unix)
       - name: Create zip (Unix)
         if: runner.os != 'Windows'
         run: |
           cd dist
-          zip semantics-${{ matrix.platform }}.zip semantics
+          zip semantics-v${{ steps.get_version.outputs.version }}-${{ matrix.platform }}-x86_64.zip semantics
       
       # Create zip (Windows)
       - name: Create zip (Windows)
         if: runner.os == 'Windows'
         run: |
           cd dist
-          Compress-Archive -Path semantics.exe -DestinationPath semantics-${{ matrix.platform }}.zip
+          Compress-Archive -Path semantics.exe -DestinationPath semantics-v${{ steps.get_version.outputs.version }}-${{ matrix.platform }}-x86_64.zip
       
       # Upload artifact for release workflow
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semantics-${{ matrix.platform }}
-          path: dist/semantics-${{ matrix.platform }}.zip
+          name: semantics-v${{ steps.get_version.outputs.version }}-${{ matrix.platform }}-x86_64
+          path: dist/semantics-v${{ steps.get_version.outputs.version }}-${{ matrix.platform }}-x86_64.zip
           retention-days: 7
 
   # Optional: Add linting/formatting jobs if tools are added to dev dependencies
