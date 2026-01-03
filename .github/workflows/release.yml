@@ -101,8 +101,7 @@ jobs:
           
           # Install the package and its dependencies in a virtual environment
           uv venv dist/semantics/venv
-          source dist/semantics/venv/bin/activate
-          uv pip install .
+          dist/semantics/venv/bin/pip install .
           
           # Create a launcher script
           cat > dist/semantics/semantics << 'EOF'
@@ -147,8 +146,7 @@ jobs:
           
           # Install the package and its dependencies in a virtual environment
           uv venv dist\semantics\venv
-          dist\semantics\venv\Scripts\Activate.ps1
-          uv pip install .
+          dist\semantics\venv\Scripts\pip.exe install .
           
           # Create a launcher batch script
           @'
