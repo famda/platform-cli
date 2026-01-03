@@ -28,7 +28,7 @@ version_toml = ["pyproject.toml:project.version"]
 major_on_zero = true
 branch = "main"
 upload_to_vcs_release = true
-build_command = "pip install uv && uv build"
+build_command = "pip install uv==0.5.11 && uv build"
 
 # Commit parser configuration for Conventional Commits
 [tool.semantic_release.commit_parser_options]

@@ -52,7 +52,7 @@ jobs:
       # - Analyzes commits since the last tag
       # - Determines the next version using semantic versioning:
       #   * feat: -> MINOR version bump
-      #   * fix:/perf: -> PATCH version bump  
+      #   * fix:/perf: -> PATCH version bump
       #   * feat!/BREAKING CHANGE: -> MAJOR version bump
       # - Updates version in pyproject.toml
       # - Creates a git tag
@@ -77,13 +77,10 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: semantics-${{ needs.release.outputs.version }}-linux-x86_64.zip
             platform: linux
           - os: windows-latest
-            artifact_name: semantics-${{ needs.release.outputs.version }}-windows-x86_64.zip
             platform: windows
           - os: macos-latest
-            artifact_name: semantics-${{ needs.release.outputs.version }}-macos-x86_64.zip
             platform: macos
     
     steps:
@@ -117,7 +114,7 @@ jobs:
           cat > dist/semantics/semantics << 'EOF'
           #!/bin/bash
           SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-          "$SCRIPT_DIR/venv/bin/python" -m semantics.cli "$@"
+          "$SCRIPT_DIR/venv/bin/python" -m semantics "$@"
           EOF
           chmod +x dist/semantics/semantics
           
@@ -163,7 +160,7 @@ EOF
           $batchScript = @"
 @echo off
 set SCRIPT_DIR=%~dp0
-"%SCRIPT_DIR%venv\Scripts\python.exe" -m semantics.cli %*
+"%SCRIPT_DIR%venv\Scripts\python.exe" -m semantics %*
 "@
           Set-Content -Path dist\semantics\semantics.bat -Value $batchScript -Encoding UTF8
           
