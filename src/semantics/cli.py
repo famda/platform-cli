@@ -52,7 +52,6 @@ def main() -> int:
     # Validate that at least one processing module is specified
     if not args.transcribe and not args.objects:
         parser.error("At least one processing module (--transcribe or --objects) must be specified")
-        return 1
     
     # Import modules dynamically to avoid loading unnecessary dependencies
     if args.transcribe:
