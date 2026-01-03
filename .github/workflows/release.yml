@@ -8,7 +8,9 @@ on:
     workflows: ["CI"]
     types:
       - completed
-    branches: [main]
+    branches:
+      - main
+      - 'release/**'
 
 # Permissions for release workflow
 # - contents: write - needed to create releases and push tags
@@ -48,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.workflow_run.head_commit.id }}
+          ref: ${{ github.event.workflow_run.head_branch }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
