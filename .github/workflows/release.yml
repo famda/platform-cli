@@ -1,0 +1,201 @@
+name: Release
+
+# This workflow is triggered on pushes to main branch
+# It uses Conventional Commits to determine the next version automatically
+# and creates a GitHub Release with per-OS downloadable ZIP artifacts
+on:
+  push:
+    branches: [main]
+
+# Permissions for release workflow
+# - contents: write - needed to create releases and push tags
+# - issues: write - needed by python-semantic-release
+# - pull-requests: write - needed by python-semantic-release
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+# Prevent concurrent releases
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # First job: Determine version and create release
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    # Only run if the commit is not from the release bot itself
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      # Use Python Semantic Release to handle versioning based on Conventional Commits
+      # This tool:
+      # - Analyzes commits since the last tag
+      # - Determines the next version using semantic versioning:
+      #   * feat: -> MINOR version bump
+      #   * fix:/perf: -> PATCH version bump
+      #   * feat!/BREAKING CHANGE: -> MAJOR version bump
+      # - Updates version in pyproject.toml
+      # - Creates a git tag
+      # - Generates release notes from commit messages
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v9.12.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          root_options: "-vv"
+
+  # Second job: Build per-OS artifacts and attach to release
+  build-artifacts:
+    name: Build ${{ matrix.os }} artifact
+    runs-on: ${{ matrix.os }}
+    needs: release
+    
+    # Only run if a release was created
+    if: needs.release.outputs.released == 'true'
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      
+      # Create a self-contained bundle with venv and launcher script
+      # This approach works across all platforms without requiring compilation
+      - name: Build self-contained bundle (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          # Create a clean build directory
+          mkdir -p dist/semantics
+          
+          # Create virtual environment and install package with uv
+          # Using uv for consistency with rest of project
+          uv venv dist/semantics/venv
+          uv pip install --python dist/semantics/venv/bin/python .
+          
+          # Create a launcher script
+          cat > dist/semantics/semantics << 'EOF'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          "$SCRIPT_DIR/venv/bin/python" -m semantics "$@"
+          EOF
+          chmod +x dist/semantics/semantics
+          
+          # Create a README for the bundle
+          cat > dist/semantics/README.txt << EOF
+Semantics CLI - ${{ needs.release.outputs.version }}
+
+This is a self-contained distribution of the semantics CLI tool.
+
+Usage:
+  ./semantics --help
+  ./semantics -i input.mp4 -o output/ --transcribe
+
+The bundle includes:
+- semantics CLI tool
+- Python virtual environment with all dependencies
+- Launch script
+
+Requirements:
+- Python 3.12+ must be installed on your system
+
+For more information, visit:
+https://github.com/famda/platform-cli
+EOF
+          
+          # Create the ZIP archive
+          cd dist
+          zip -r ../semantics-${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip semantics/
+      
+      - name: Build self-contained bundle (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Create a clean build directory
+          New-Item -ItemType Directory -Force -Path dist\semantics
+          
+          # Create virtual environment and install package with uv
+          # Using uv for consistency with rest of project
+          uv venv dist\semantics\venv
+          uv pip install --python dist\semantics\venv\Scripts\python.exe .
+          
+          # Create a launcher batch script
+          $batchScript = @"
+@echo off
+set SCRIPT_DIR=%~dp0
+"%SCRIPT_DIR%venv\Scripts\python.exe" -m semantics %*
+"@
+          Set-Content -Path dist\semantics\semantics.bat -Value $batchScript -Encoding UTF8
+          
+          # Create a README for the bundle
+          $readmeContent = @"
+Semantics CLI - ${{ needs.release.outputs.version }}
+
+This is a self-contained distribution of the semantics CLI tool.
+
+Usage:
+  semantics.bat --help
+  semantics.bat -i input.mp4 -o output\ --transcribe
+
+The bundle includes:
+- semantics CLI tool
+- Python virtual environment with all dependencies
+- Launch script (semantics.bat)
+
+Requirements:
+- Python 3.12+ must be installed on your system
+
+For more information, visit:
+https://github.com/famda/platform-cli
+"@
+          Set-Content -Path dist\semantics\README.txt -Value $readmeContent -Encoding UTF8
+          
+          # Create the ZIP archive
+          Compress-Archive -Path dist\semantics\* -DestinationPath semantics-${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip
+      
+      # Upload the artifact to the GitHub Release
+      - name: Upload artifact to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: semantics-${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
