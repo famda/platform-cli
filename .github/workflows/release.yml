@@ -48,7 +48,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ github.event.workflow_run.head_commit.id }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -94,7 +94,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v6
         with:
           workflow: ci.yml
-          commit: ${{ github.event.workflow_run.head_sha }}
+          commit: ${{ github.event.workflow_run.head_commit.id }}
           name: semantics-${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow_conclusion: success
