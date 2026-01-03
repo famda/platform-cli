@@ -99,9 +99,10 @@ jobs:
           # Create a clean build directory
           mkdir -p dist/semantics
           
-          # Install the package and its dependencies in a virtual environment
+          # Create virtual environment and install package with uv
+          # Using uv for consistency with rest of project
           uv venv dist/semantics/venv
-          dist/semantics/venv/bin/pip install .
+          uv pip install --python dist/semantics/venv/bin/python .
           
           # Create a launcher script
           cat > dist/semantics/semantics << 'EOF'
@@ -144,9 +145,10 @@ jobs:
           # Create a clean build directory
           New-Item -ItemType Directory -Force -Path dist\semantics
           
-          # Install the package and its dependencies in a virtual environment
+          # Create virtual environment and install package with uv
+          # Using uv for consistency with rest of project
           uv venv dist\semantics\venv
-          dist\semantics\venv\Scripts\pip.exe install .
+          uv pip install --python dist\semantics\venv\Scripts\python.exe .
           
           # Create a launcher batch script
           @'
