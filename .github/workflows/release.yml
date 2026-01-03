@@ -103,7 +103,6 @@ jobs:
           uv venv dist/semantics/venv
           source dist/semantics/venv/bin/activate
           uv pip install .
-          deactivate
           
           # Create a launcher script
           cat > dist/semantics/semantics << 'EOF'
@@ -150,7 +149,6 @@ jobs:
           uv venv dist\semantics\venv
           dist\semantics\venv\Scripts\Activate.ps1
           uv pip install .
-          deactivate
           
           # Create a launcher batch script
           @'
