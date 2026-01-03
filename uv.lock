@@ -144,7 +144,7 @@ wheels = [
 
 [[package]]
 name = "semantics"
-version = "0.0.2.dev3+ge9a39a1c4.d20260103"
+version = "0.0.2.dev5+gf8af7dddf"
 source = { editable = "." }
 
 [package.optional-dependencies]
