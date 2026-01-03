@@ -15,6 +15,7 @@ semantics = "semantics.cli:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "pyinstaller>=6.0.0",
 ]
 
 [build-system]

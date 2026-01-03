@@ -1,20 +1,25 @@
 name: Release
 
-# This workflow is triggered on pushes to main branch
+# This workflow is triggered after the CI workflow completes successfully
 # It uses Conventional Commits to determine the next version automatically
 # and creates a GitHub Release with per-OS downloadable ZIP artifacts
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches: [main]
 
 # Permissions for release workflow
 # - contents: write - needed to create releases and push tags
 # - issues: write - needed by python-semantic-release
 # - pull-requests: write - needed by python-semantic-release
+# - actions: read - needed to check workflow_run status
 permissions:
   contents: write
   issues: write
   pull-requests: write
+  actions: read
 
 # Prevent concurrent releases
 concurrency:
@@ -27,8 +32,10 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     
-    # Only run if the commit is not from the release bot itself
-    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+    # Only run if CI workflow completed successfully and commit is not from the release bot
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      !contains(github.event.workflow_run.head_commit.message, 'chore(release)')
     
     outputs:
       released: ${{ steps.release.outputs.released }}
@@ -41,6 +48,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.workflow_run.head_branch }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -86,7 +94,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v6
         with:
           workflow: ci.yml
-          commit: ${{ github.sha }}
+          commit: ${{ github.event.workflow_run.head_sha }}
           name: semantics-${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow_conclusion: success
