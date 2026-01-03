@@ -1,6 +1,54 @@
 # CHANGELOG
 
 
+## v0.0.2 (2026-01-03)
+
+### Bug Fixes
+
+* fix: CI/release artifact naming mismatch (#16)
+
+* Initial plan
+
+* fix: Use version-agnostic artifact names in CI workflow
+
+- Remove dynamic version from CI artifact names (use semantics-{platform}-x86_64)
+- Update release workflow to download by exact artifact name (no regex needed)
+- Rename artifacts to include semantic version when attaching to release
+
+This fixes the mismatch between hatch-vcs dynamic versions (e.g., 0.1.dev1+g18504a43d)
+used in CI and semantic release versions (e.g., 0.0.1) expected by the release workflow.
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+---------
+
+Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Co-authored-by: famda <26621392+famda@users.noreply.github.com> ([`37af358`](https://github.com/famda/platform-cli/commit/37af358ed251ecd03f10c3da20d578c041a900e2))
+
+### Unknown
+
+* Align release artifact downloads with CI naming (#15)
+
+* Initial plan
+
+* Align release artifacts with CI naming
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Harden release artifact download matching
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+* Improve artifact regex and validation
+
+Co-authored-by: famda <26621392+famda@users.noreply.github.com>
+
+---------
+
+Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Co-authored-by: famda <26621392+famda@users.noreply.github.com> ([`06cc060`](https://github.com/famda/platform-cli/commit/06cc0602fff33eba025431b7e4abdfe021d457f4))
+
+
 ## v0.0.1 (2026-01-03)
 
 ### Bug Fixes
