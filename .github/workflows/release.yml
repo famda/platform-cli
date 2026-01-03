@@ -97,7 +97,7 @@ jobs:
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_commit.id }}
-          name: semantics-v[0-9A-Za-z.+-]+-${{ matrix.platform }}-x86_64
+          name: ^semantics-v[0-9A-Za-z.+-]+-${{ matrix.platform }}-x86_64$
           name_is_regexp: true
           path: artifacts/${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -113,11 +113,16 @@ jobs:
             echo "Artifact directory not found: $ARTIFACT_DIR"
             exit 1
           fi
-          ARTIFACT_PATH=$(find "$ARTIFACT_DIR" -name "semantics-v*-${{ matrix.platform }}-x86_64.zip" -print -quit)
-          if [ -z "$ARTIFACT_PATH" ]; then
+          readarray -t matches < <(find "$ARTIFACT_DIR" -maxdepth 2 -name "semantics-v*-${{ matrix.platform }}-x86_64.zip")
+          if [ "${#matches[@]}" -eq 0 ]; then
             echo "Artifact zip not found for platform ${{ matrix.platform }}"
             exit 1
           fi
+          if [ "${#matches[@]}" -gt 1 ]; then
+            echo "Multiple artifacts found for platform ${{ matrix.platform }}: ${matches[*]}"
+            exit 1
+          fi
+          ARTIFACT_PATH="${matches[0]}"
           TARGET_PATH="artifacts/${{ matrix.platform }}/semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip"
           mv "$ARTIFACT_PATH" "$TARGET_PATH"
       
