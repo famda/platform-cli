@@ -39,20 +39,31 @@ Run the CLI using `uv`:
 
 ```bash
 # Show help
-uv run semantics
+uv run semantics --help
 
 # Process a video file with transcription
-uv run semantics -i video.mp4 --transcribe
+uv run semantics -i video.mp4 -o ./output --transcribe
 
 # Process an audio file with transcription
-uv run semantics -i audio.mp3 --transcribe
+uv run semantics -i audio.mp3 -o ./results --transcribe
 
 # Process an image file with object detection
-uv run semantics -i image.jpg --objects
+uv run semantics -i image.jpg -o ./output --objects
 
 # Process a video file with multiple modules
-uv run semantics -i video.mp4 --transcribe --objects
+uv run semantics -i video.mp4 -o ./results --transcribe --objects
+
+# Using short options
+uv run semantics -i document.pdf -o /tmp/output --transcribe
 ```
+
+**Required Arguments:**
+- `-i, --input`: Input file path (supports video, audio, images, documents, 3D models)
+- `-o, --output`: Output folder path where results will be saved
+
+**Processing Modules** (at least one required):
+- `--transcribe`: Enable transcription module
+- `--objects`: Enable object detection module
 
 ## Project Structure
 

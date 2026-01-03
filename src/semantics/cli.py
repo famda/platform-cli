@@ -5,6 +5,7 @@ of various CLI modules based on user input.
 """
 
 import argparse
+import sys
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -17,7 +18,15 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i", "--input",
         type=str,
-        help="Input file path (e.g., video.mp4)",
+        required=True,
+        help="Input file path (e.g., video.mp4, audio.mp3, document.pdf)",
+    )
+    
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        required=True,
+        help="Output folder path for results",
     )
     
     parser.add_argument(
@@ -40,20 +49,22 @@ def main() -> int:
     parser = create_parser()
     args = parser.parse_args()
     
+    # Validate that at least one processing module is specified
+    if not args.transcribe and not args.objects:
+        parser.error("At least one processing module (--transcribe or --objects) must be specified")
+        return 1
+    
     # Import modules dynamically to avoid loading unnecessary dependencies
     if args.transcribe:
         from semantics.modules import transcribe
         print(f"Executing transcribe module on: {args.input}")
-        transcribe.execute(args.input)
+        print(f"Output will be saved to: {args.output}")
+        transcribe.execute(args.input, args.output)
     
     if args.objects:
         from semantics.modules import objects
         print(f"Executing objects module on: {args.input}")
-        objects.execute(args.input)
-    
-    # If no module is specified, show help
-    if not args.transcribe and not args.objects:
-        parser.print_help()
-        return 0
+        print(f"Output will be saved to: {args.output}")
+        objects.execute(args.input, args.output)
     
     return 0
