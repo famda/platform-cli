@@ -97,17 +97,31 @@ jobs:
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_commit.id }}
-          name: semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64
+          name: semantics-v.*-${{ matrix.platform }}-x86_64
+          name_is_regexp: true
+          path: artifacts/${{ matrix.platform }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow_conclusion: success
           check_artifacts: true
+      
+      # Normalize the artifact filename to the release version so uploads stay consistent
+      - name: Rename artifact to release version
+        run: |
+          set -euo pipefail
+          ARTIFACT_PATH=$(find "artifacts/${{ matrix.platform }}" -name "semantics-v*-${{ matrix.platform }}-x86_64.zip" -print -quit)
+          if [ -z "$ARTIFACT_PATH" ]; then
+            echo "Artifact zip not found for platform ${{ matrix.platform }}"
+            exit 1
+          fi
+          TARGET_PATH="artifacts/${{ matrix.platform }}/semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip"
+          mv "$ARTIFACT_PATH" "$TARGET_PATH"
       
       # Upload the artifact to the GitHub Release
       - name: Upload artifact to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release.outputs.tag }}
-          files: semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip
+          files: artifacts/${{ matrix.platform }}/semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
