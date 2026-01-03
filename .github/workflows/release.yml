@@ -119,26 +119,26 @@ jobs:
           chmod +x dist/semantics/semantics
           
           # Create a README for the bundle
-          cat > dist/semantics/README.txt << EOF
-Semantics CLI - ${{ needs.release.outputs.version }}
-
-This is a self-contained distribution of the semantics CLI tool.
-
-Usage:
-  ./semantics --help
-  ./semantics -i input.mp4 -o output/ --transcribe
-
-The bundle includes:
-- semantics CLI tool
-- Python virtual environment with all dependencies
-- Launch script
-
-Requirements:
-- Python 3.12+ must be installed on your system
-
-For more information, visit:
-https://github.com/famda/platform-cli
-EOF
+          cat > dist/semantics/README.txt << 'EOF'
+          Semantics CLI - ${{ needs.release.outputs.version }}
+          
+          This is a self-contained distribution of the semantics CLI tool.
+          
+          Usage:
+            ./semantics --help
+            ./semantics -i input.mp4 -o output/ --transcribe
+          
+          The bundle includes:
+          - semantics CLI tool
+          - Python virtual environment with all dependencies
+          - Launch script
+          
+          Requirements:
+          - Python 3.12+ must be installed on your system
+          
+          For more information, visit:
+          https://github.com/famda/platform-cli
+          EOF
           
           # Create the ZIP archive
           cd dist
@@ -158,33 +158,33 @@ EOF
           
           # Create a launcher batch script
           $batchScript = @"
-@echo off
-set SCRIPT_DIR=%~dp0
-"%SCRIPT_DIR%venv\Scripts\python.exe" -m semantics %*
-"@
+          @echo off
+          set SCRIPT_DIR=%~dp0
+          "%SCRIPT_DIR%venv\Scripts\python.exe" -m semantics %*
+          "@
           Set-Content -Path dist\semantics\semantics.bat -Value $batchScript -Encoding UTF8
           
           # Create a README for the bundle
           $readmeContent = @"
-Semantics CLI - ${{ needs.release.outputs.version }}
-
-This is a self-contained distribution of the semantics CLI tool.
-
-Usage:
-  semantics.bat --help
-  semantics.bat -i input.mp4 -o output\ --transcribe
-
-The bundle includes:
-- semantics CLI tool
-- Python virtual environment with all dependencies
-- Launch script (semantics.bat)
-
-Requirements:
-- Python 3.12+ must be installed on your system
-
-For more information, visit:
-https://github.com/famda/platform-cli
-"@
+          Semantics CLI - ${{ needs.release.outputs.version }}
+          
+          This is a self-contained distribution of the semantics CLI tool.
+          
+          Usage:
+            semantics.bat --help
+            semantics.bat -i input.mp4 -o output\ --transcribe
+          
+          The bundle includes:
+          - semantics CLI tool
+          - Python virtual environment with all dependencies
+          - Launch script (semantics.bat)
+          
+          Requirements:
+          - Python 3.12+ must be installed on your system
+          
+          For more information, visit:
+          https://github.com/famda/platform-cli
+          "@
           Set-Content -Path dist\semantics\README.txt -Value $readmeContent -Encoding UTF8
           
           # Create the ZIP archive
