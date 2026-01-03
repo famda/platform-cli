@@ -40,13 +40,10 @@ jobs:
           cache-dependency-glob: "uv.lock"
       
       # Install dependencies with uv
-      # Note: We regenerate the lockfile first because dynamic versioning
-      # from hatch-vcs means the version changes with each commit
-      - name: Update lockfile
-        run: uv lock
-      
+      # Using --frozen to ensure reproducible builds from lockfile
+      # The editable semantics package version can differ due to dynamic versioning
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --frozen --extra dev
       
       # Run tests with pytest
       # Note: This project doesn't currently have coverage tools configured,
@@ -96,13 +93,10 @@ jobs:
         uses: astral-sh/setup-uv@v4
       
       # Install dependencies including pyinstaller from dev dependencies
-      # Note: We regenerate the lockfile first because dynamic versioning
-      # from hatch-vcs means the version changes with each commit
-      - name: Update lockfile
-        run: uv lock
-      
+      # Using --frozen to ensure reproducible builds from lockfile
+      # The editable semantics package version can differ due to dynamic versioning
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --frozen --extra dev
       
       # Build with PyInstaller
       - name: Build with PyInstaller
