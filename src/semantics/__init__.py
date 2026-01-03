@@ -2,5 +2,14 @@
 
 from semantics.cli import main
 
-__version__ = "0.1.0"
-__all__ = ["main"]
+# Version injected by hatch-vcs
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    try:
+        __version__ = version("semantics")
+    except PackageNotFoundError:
+        __version__ = "unknown"
+except ImportError:
+    __version__ = "unknown"
+
+__all__ = ["main", "__version__"]
