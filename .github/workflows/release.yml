@@ -97,7 +97,7 @@ jobs:
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_commit.id }}
-          name: semantics-${{ matrix.platform }}
+          name: semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow_conclusion: success
           check_artifacts: true
@@ -107,7 +107,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release.outputs.tag }}
-          files: semantics-${{ matrix.platform }}.zip
+          files: semantics-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

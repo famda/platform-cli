@@ -1,6 +1,6 @@
 [project]
 name = "semantics"
-version = "0.0.1"
+dynamic = ["version"]
 description = "A semantic analysis CLI tool for processing multiple file types"
 readme = "README.md"
 authors = [
@@ -19,13 +19,16 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+# Hatch version configuration for dynamic versioning from VCS (Git)
+[tool.hatch.version]
+source = "vcs"
 
 # Configuration for Python Semantic Release
 # This tool automates versioning based on Conventional Commits
 [tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
 major_on_zero = true
 branch = "main"
 upload_to_vcs_release = true
