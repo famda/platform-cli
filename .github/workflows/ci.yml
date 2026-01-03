@@ -57,6 +57,7 @@ jobs:
       
       # Verify the built package can be installed
       - name: Verify package
+        shell: bash
         run: |
           python -m pip install dist/*.whl
           semantics --help
