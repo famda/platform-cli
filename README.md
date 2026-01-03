@@ -50,7 +50,7 @@ uv run semantics -i audio.mp3 --transcribe
 # Process an image file with object detection
 uv run semantics -i image.jpg --objects
 
-# Process a file with multiple modules
+# Process a video file with multiple modules
 uv run semantics -i video.mp4 --transcribe --objects
 ```
 
