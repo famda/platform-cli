@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ["3.12"]
     
     steps:
       - name: Check out code
@@ -61,6 +61,65 @@ jobs:
         run: |
           python -m pip install dist/*.whl
           semantics --help
+
+  # Build PyInstaller artifacts for each platform
+  # These artifacts will be used by the release workflow
+  build-artifacts:
+    name: Build ${{ matrix.platform }} artifact
+    runs-on: ${{ matrix.os }}
+    needs: test
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      
+      # Install dependencies including pyinstaller from dev dependencies
+      - name: Install dependencies
+        run: uv sync --locked --extra dev
+      
+      # Build with PyInstaller
+      - name: Build with PyInstaller
+        run: uv run pyinstaller --onefile src/semantics/__main__.py --name semantics
+      
+      # Create zip (Unix)
+      - name: Create zip (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd dist
+          zip semantics-${{ matrix.platform }}.zip semantics
+      
+      # Create zip (Windows)
+      - name: Create zip (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd dist
+          Compress-Archive -Path semantics.exe -DestinationPath semantics-${{ matrix.platform }}.zip
+      
+      # Upload artifact for release workflow
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantics-${{ matrix.platform }}
+          path: dist/semantics-${{ matrix.platform }}.zip
+          retention-days: 7
 
   # Optional: Add linting/formatting jobs if tools are added to dev dependencies
   # lint:
