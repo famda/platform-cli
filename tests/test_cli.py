@@ -1,7 +1,6 @@
 """Tests for the CLI module."""
 
-import pytest
-from semantics.cli import create_parser, main
+from semantics.cli import create_parser
 
 
 def test_create_parser():

@@ -86,12 +86,6 @@ Run the test suite with pytest:
 uv run pytest
 ```
 
-Run tests with coverage:
-
-```bash
-uv run pytest --cov=semantics
-```
-
 ### Adding New Modules
 
 To add a new analysis module:

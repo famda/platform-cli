@@ -1,6 +1,5 @@
 """Tests for the objects module."""
 
-import pytest
 from semantics.modules import objects
 
 

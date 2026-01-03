@@ -5,8 +5,6 @@ of various CLI modules based on user input.
 """
 
 import argparse
-import sys
-from pathlib import Path
 
 
 def create_parser() -> argparse.ArgumentParser:

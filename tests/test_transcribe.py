@@ -1,6 +1,5 @@
 """Tests for the transcribe module."""
 
-import pytest
 from semantics.modules import transcribe
 
 
