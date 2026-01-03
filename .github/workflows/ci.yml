@@ -7,6 +7,10 @@ on:
   push:
     branches: [main]
 
+# Minimum required permissions for CI workflow
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}

@@ -7,6 +7,15 @@ on:
   push:
     branches: [main]
 
+# Permissions for release workflow
+# - contents: write - needed to create releases and push tags
+# - issues: write - needed by python-semantic-release
+# - pull-requests: write - needed by python-semantic-release
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 # Prevent concurrent releases
 concurrency:
   group: release
