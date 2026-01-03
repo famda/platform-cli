@@ -1,6 +1,6 @@
 # platform-cli
 
-A semantic analysis CLI tool for video processing.
+A semantic analysis CLI tool for processing multiple file types including audio, documents, video, 3D models, and images.
 
 ## Overview
 
@@ -44,8 +44,11 @@ uv run semantics
 # Process a video file with transcription
 uv run semantics -i video.mp4 --transcribe
 
-# Process a video file with object detection
-uv run semantics -i video.mp4 --objects
+# Process an audio file with transcription
+uv run semantics -i audio.mp3 --transcribe
+
+# Process an image file with object detection
+uv run semantics -i image.jpg --objects
 
 # Process a video file with multiple modules
 uv run semantics -i video.mp4 --transcribe --objects
