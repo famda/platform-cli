@@ -2,17 +2,19 @@
 """Build script for creating PyInstaller executables.
 
 This script creates standalone executables for different module variants:
+- semantics: Lightweight launcher for unified CLI experience
 - semantics-audio: Audio processing only
 - semantics-video: Video processing only
 - semantics-document: Document processing only
-- semantics: Full version with all modules
+- semantics-full: Full version with all modules (deprecated, use launcher + modules)
 
 Usage:
-    python build.py all       # Build all variants
-    python build.py audio     # Build audio variant only
-    python build.py video     # Build video variant only
-    python build.py document  # Build document variant only
-    python build.py full      # Build full variant only
+    python build.py all        # Build all variants (launcher + modules)
+    python build.py launcher   # Build launcher only
+    python build.py audio      # Build audio variant only
+    python build.py video      # Build video variant only
+    python build.py document   # Build document variant only
+    python build.py full       # Build full variant (all modules in one)
 """
 
 from __future__ import annotations
@@ -29,6 +31,13 @@ BUILD_DIR = ROOT_DIR / "build"
 
 # Module configurations
 VARIANTS = {
+    "launcher": {
+        "modules": [],
+        "hidden_imports": [
+            "semantics",
+        ],
+        "entry_point": "launcher",  # Uses launcher.py instead of __main__.py
+    },
     "audio": {
         "modules": ["audio"],
         "hidden_imports": [
@@ -77,7 +86,7 @@ def build_variant(name: str) -> bool:
     """Build a specific variant using PyInstaller.
 
     Args:
-        name: The variant name ('audio', 'video', 'document', or 'full')
+        name: The variant name ('launcher', 'audio', 'video', 'document', or 'full')
 
     Returns:
         True if build succeeded, False otherwise
@@ -88,9 +97,11 @@ def build_variant(name: str) -> bool:
 
     config = VARIANTS[name]
 
-    # Determine executable name (without version - CI adds it)
-    if name == "full":
+    # Determine executable name
+    if name == "launcher":
         exe_name = "semantics"
+    elif name == "full":
+        exe_name = "semantics-full"
     else:
         exe_name = f"semantics-{name}"
 
@@ -113,14 +124,20 @@ def build_variant(name: str) -> bool:
     for hidden in config["hidden_imports"]:
         cmd.extend(["--hidden-import", hidden])
 
-    # Add data files for modules
-    sep = ";" if sys.platform == "win32" else ":"
-    for module in config["modules"]:
-        module_path = ROOT_DIR / "src" / "semantics" / "modules" / module
-        cmd.extend(["--add-data", f"{module_path}{sep}semantics/modules/{module}"])
+    # Add data files for modules (not needed for launcher)
+    if config["modules"]:
+        sep = ";" if sys.platform == "win32" else ":"
+        for module in config["modules"]:
+            module_path = ROOT_DIR / "src" / "semantics" / "modules" / module
+            cmd.extend(["--add-data", f"{module_path}{sep}semantics/modules/{module}"])
 
-    # Add the main entry point
-    cmd.append(str(ROOT_DIR / "src" / "semantics" / "__main__.py"))
+    # Determine entry point
+    if config.get("entry_point") == "launcher":
+        entry_point = ROOT_DIR / "src" / "semantics" / "launcher.py"
+    else:
+        entry_point = ROOT_DIR / "src" / "semantics" / "__main__.py"
+    
+    cmd.append(str(entry_point))
 
     try:
         subprocess.run(cmd, check=True)
@@ -170,7 +187,7 @@ def main() -> int:
 
     else:
         print(f"[ERROR] Unknown target: {target}")
-        print("Valid targets: all, clean, audio, video, document, full")
+        print("Valid targets: all, clean, launcher, audio, video, document, full")
         return 1
 
 

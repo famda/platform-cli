@@ -21,13 +21,15 @@ def get_executable_path(variant: str) -> Path:
     """Get the platform-aware path for an executable variant.
 
     Args:
-        variant: The variant name ('full', 'audio', 'video', 'document')
+        variant: The variant name ('launcher', 'full', 'audio', 'video', 'document')
 
     Returns:
         Path to the executable with platform-appropriate extension.
     """
-    if variant == "full":
+    if variant == "launcher":
         exe_name = "semantics"
+    elif variant == "full":
+        exe_name = "semantics-full"
     else:
         exe_name = f"semantics-{variant}"
 
@@ -69,7 +71,7 @@ def build_all_executables() -> Generator[Path, None, None]:
         Path to the dist directory containing built executables.
     """
     # Check if all executables already exist
-    all_variants = ["full", "audio", "video", "document"]
+    all_variants = ["launcher", "full", "audio", "video", "document"]
     all_exist = all(get_executable_path(v).exists() for v in all_variants)
 
     if not all_exist:
@@ -96,8 +98,14 @@ def build_all_executables() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
+def launcher_exe(build_all_executables: Path) -> Path:
+    """Get path to the launcher executable."""
+    return get_executable_path("launcher")
+
+
+@pytest.fixture
 def full_exe(build_all_executables: Path) -> Path:
-    """Get path to the full semantics executable."""
+    """Get path to the full semantics-full executable."""
     return get_executable_path("full")
 
 

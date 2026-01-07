@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        variant: [full, audio, video, document]
+        variant: [launcher, audio, video, document, full]
         include:
           - os: ubuntu-latest
             platform: linux
@@ -90,8 +90,10 @@ jobs:
         id: artifact
         shell: bash
         run: |
-          if [ "${{ matrix.variant }}" = "full" ]; then
+          if [ "${{ matrix.variant }}" = "launcher" ]; then
             BASENAME="semantics"
+          elif [ "${{ matrix.variant }}" = "full" ]; then
+            BASENAME="semantics-full"
           else
             BASENAME="semantics-${{ matrix.variant }}"
           fi

@@ -18,17 +18,10 @@ function Write-Info { param($msg) Write-Host "==> " -ForegroundColor Green -NoNe
 function Write-Warn { param($msg) Write-Host "warning: " -ForegroundColor Yellow -NoNewline; Write-Host $msg }
 function Write-Err { param($msg) Write-Host "error: " -ForegroundColor Red -NoNewline; Write-Host $msg; exit 1 }
 
-# Determine executable name based on variant
-if ($Variant -eq "full") {
-    $ExeName = "semantics"
-} else {
-    $ExeName = "semantics-$Variant"
-}
-
 if ($Prerelease) {
-    Write-Info "Installing $ExeName (development build)..."
+    Write-Info "Installing semantics with $Variant module (development build)..."
 } else {
-    Write-Info "Installing $ExeName..."
+    Write-Info "Installing semantics with $Variant module..."
 }
 
 # Detect platform
@@ -50,46 +43,71 @@ try {
     Write-Err "Could not determine latest version. Check https://github.com/$Repo/releases"
 }
 
-# Build download filename
-# Release format: semantics-v0.1.0-windows-x86_64.zip or semantics-audio-v0.1.0-windows-x86_64.zip
-# Dev format: semantics-windows-x86_64.zip or semantics-audio-windows-x86_64.zip
-if ($Prerelease) {
-    $Filename = "$ExeName-$Platform-$Arch.zip"
-} else {
-    $Filename = "$ExeName-$Version-$Platform-$Arch.zip"
-}
-
-$Url = "https://github.com/$Repo/releases/download/$Version/$Filename"
-
 # Resolve $env:TEMP to long path (fixes 8.3 short path issues like C:\Users\TERRY~1.ANE)
 $TempBase = (Get-Item $env:TEMP).FullName
 $TempDir = Join-Path $TempBase "semantics-install-$PID"
-$ZipPath = Join-Path $TempDir $Filename
 
-Write-Info "Downloading $Url..."
-
-New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
-try {
-    Invoke-WebRequest -Uri $Url -OutFile $ZipPath
-
-    # Extract
-    Write-Info "Extracting..."
-    Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
-
-    # Find the executable in extracted contents
-    $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
-    if (-not $ExtractedExe) {
-        Write-Err "Could not find executable in downloaded archive"
+# Function to download and install an executable
+function Install-Executable {
+    param(
+        [string]$ExeName,
+        [string]$FinalName
+    )
+    
+    # Build download filename
+    # Release format: semantics-v0.1.0-windows-x86_64.zip or semantics-audio-v0.1.0-windows-x86_64.zip
+    # Dev format: semantics-windows-x86_64.zip or semantics-audio-windows-x86_64.zip
+    if ($Prerelease) {
+        $Filename = "$ExeName-$Platform-$Arch.zip"
+    } else {
+        $Filename = "$ExeName-$Version-$Platform-$Arch.zip"
     }
-
+    
+    $Url = "https://github.com/$Repo/releases/download/$Version/$Filename"
+    $ZipPath = Join-Path $TempDir $Filename
+    $ExtractDir = Join-Path $TempDir "extract_$ExeName"
+    
+    Write-Info "Downloading $ExeName..."
+    
+    try {
+        Invoke-WebRequest -Uri $Url -OutFile $ZipPath
+    } catch {
+        Write-Err "Download failed for $ExeName. Check if version '$Version' exists at https://github.com/$Repo/releases"
+    }
+    
+    # Extract
+    Write-Info "Extracting $ExeName..."
+    New-Item -ItemType Directory -Force -Path $ExtractDir | Out-Null
+    Expand-Archive -Path $ZipPath -DestinationPath $ExtractDir -Force
+    
+    # Find the executable in extracted contents
+    $ExtractedExe = Get-ChildItem -Path $ExtractDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
+    if (-not $ExtractedExe) {
+        Write-Err "Could not find executable in downloaded archive for $ExeName"
+    }
+    
     # Install
-    Write-Info "Installing to $InstallDir..."
+    Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalName) -Force
+    Write-Info "Installed: $FinalName"
+}
+
+try {
+    New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-
-    # Determine final executable name (always use semantics.exe for full, semantics-variant.exe for others)
-    $FinalExeName = if ($Variant -eq "full") { "semantics.exe" } else { "semantics-$Variant.exe" }
-    Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalExeName) -Force
-
+    
+    # Always install the launcher first (unified 'semantics' command)
+    Install-Executable -ExeName "semantics" -FinalName "semantics.exe"
+    
+    # Install the module variant
+    if ($Variant -eq "full") {
+        # Full variant includes all modules in one executable
+        Install-Executable -ExeName "semantics-full" -FinalName "semantics-full.exe"
+        Write-Info "Full version installed. Use 'semantics audio', 'semantics video', or 'semantics document'."
+    } else {
+        # Individual module variant
+        Install-Executable -ExeName "semantics-$Variant" -FinalName "semantics-$Variant.exe"
+    }
+    
     # Add to PATH
     if ($env:GITHUB_ACTIONS) {
         # GitHub Actions: add to GITHUB_PATH
@@ -105,18 +123,21 @@ try {
             $env:Path = "$env:Path;$InstallDir"
         }
     }
-
-    # Verify
-    $InstalledExe = Join-Path $InstallDir $FinalExeName
-    Write-Info "Successfully installed $ExeName!"
-    & $InstalledExe --version
-
+    
+    # Verify installation
+    Write-Info "Installation complete!"
+    $LauncherExe = Join-Path $InstallDir "semantics.exe"
+    & $LauncherExe --version
+    
+    Write-Host ""
+    Write-Info "Installed executables:"
+    Get-ChildItem -Path $InstallDir -Filter "semantics*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
+    
     Write-Host ""
     Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
     Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
-}
-catch {
-    Write-Err "Download failed. Check if version '$Version' exists at https://github.com/$Repo/releases"
+    Write-Host ""
+    Write-Host "Then use: semantics $Variant --help"
 }
 finally {
     # Cleanup temp directory

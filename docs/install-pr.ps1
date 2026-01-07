@@ -30,14 +30,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Err "GitHub CLI not authenticated. Run 'gh auth login' first."
 }
 
-# Determine executable name based on variant
-if ($Variant -eq "full") {
-    $ExeName = "semantics"
-} else {
-    $ExeName = "semantics-$Variant"
-}
-
-Write-Info "Installing $ExeName from PR #$PRNumber..."
+Write-Info "Installing semantics with $Variant module from PR #$PRNumber..."
 
 # Get the PR's head commit SHA
 Write-Info "Finding PR workflow run..."
@@ -56,44 +49,66 @@ if (-not $matchingRun) {
 $runId = $matchingRun.databaseId
 Write-Info "Found workflow run: $runId"
 
-# Determine artifact name
+# Determine architecture
 $Arch = if ([Environment]::Is64BitOperatingSystem) { "x86_64" } else { "x86" }
-$ArtifactName = "$ExeName-pr-$PRNumber-windows-$Arch"
 
 # Create temp directory
 $TempBase = (Get-Item $env:TEMP).FullName
 $TempDir = Join-Path $TempBase "semantics-pr-install-$PID"
 New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
+New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+# Function to download and install an artifact
+function Install-Artifact {
+    param(
+        [string]$ArtifactName,
+        [string]$FinalName
+    )
+    
+    Write-Info "Downloading artifact: $ArtifactName..."
+    $ExtractDir = Join-Path $TempDir "extract_$FinalName"
+    New-Item -ItemType Directory -Force -Path $ExtractDir | Out-Null
+    
+    Push-Location $TempDir
+    try {
+        gh run download $runId --repo $Repo --name $ArtifactName --dir $ExtractDir
+    } catch {
+        Write-Err "Failed to download artifact '$ArtifactName'. Make sure the PR build completed successfully."
+    }
+    Pop-Location
+    
+    # Find and extract the zip
+    $ZipFile = Get-ChildItem -Path $ExtractDir -Filter "*.zip" -Recurse | Select-Object -First 1
+    if (-not $ZipFile) {
+        Write-Err "No zip file found in downloaded artifact for $ArtifactName"
+    }
+    
+    Write-Info "Extracting $ArtifactName..."
+    Expand-Archive -Path $ZipFile.FullName -DestinationPath $ExtractDir -Force
+    
+    # Find the executable
+    $ExtractedExe = Get-ChildItem -Path $ExtractDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
+    if (-not $ExtractedExe) {
+        Write-Err "Could not find executable in downloaded archive for $ArtifactName"
+    }
+    
+    Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalName) -Force
+    Write-Info "Installed: $FinalName"
+}
 
 try {
-    # Download artifact using gh
-    Write-Info "Downloading artifact: $ArtifactName..."
-    Push-Location $TempDir
-    gh run download $runId --repo $Repo --name $ArtifactName
-    Pop-Location
-
-    # Find and extract the zip
-    $ZipFile = Get-ChildItem -Path $TempDir -Filter "*.zip" -Recurse | Select-Object -First 1
-    if (-not $ZipFile) {
-        Write-Err "No zip file found in downloaded artifact"
+    # Always install the launcher first
+    $LauncherArtifact = "semantics-pr-$PRNumber-windows-$Arch"
+    Install-Artifact -ArtifactName $LauncherArtifact -FinalName "semantics.exe"
+    
+    # Install the module variant
+    if ($Variant -eq "full") {
+        $ModuleArtifact = "semantics-full-pr-$PRNumber-windows-$Arch"
+        Install-Artifact -ArtifactName $ModuleArtifact -FinalName "semantics-full.exe"
+    } else {
+        $ModuleArtifact = "semantics-$Variant-pr-$PRNumber-windows-$Arch"
+        Install-Artifact -ArtifactName $ModuleArtifact -FinalName "semantics-$Variant.exe"
     }
-
-    Write-Info "Extracting..."
-    Expand-Archive -Path $ZipFile.FullName -DestinationPath $TempDir -Force
-
-    # Find the executable
-    $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
-    if (-not $ExtractedExe) {
-        Write-Err "Could not find executable in downloaded archive"
-    }
-
-    # Install
-    Write-Info "Installing to $InstallDir..."
-    New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-
-    # Use variant-specific name
-    $FinalExeName = if ($Variant -eq "full") { "semantics.exe" } else { "semantics-$Variant.exe" }
-    Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalExeName) -Force
 
     # Add to PATH if not already there
     $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -103,18 +118,24 @@ try {
         $env:Path = "$env:Path;$InstallDir"
     }
 
-    # Verify
-    $InstalledExe = Join-Path $InstallDir $FinalExeName
-    Write-Info "Successfully installed $ExeName from PR #$PRNumber!"
-    & $InstalledExe --version
-
+    # Verify installation
+    Write-Info "Installation complete!"
+    $LauncherExe = Join-Path $InstallDir "semantics.exe"
+    & $LauncherExe --version
+    
+    Write-Host ""
+    Write-Info "Installed executables:"
+    Get-ChildItem -Path $InstallDir -Filter "semantics*.exe" | ForEach-Object { Write-Host "  $($_.Name)" }
+    
     Write-Host ""
     Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
     Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
+    Write-Host ""
+    Write-Host "Then use: semantics $Variant --help"
 }
 finally {
     # Cleanup
     if (Test-Path $TempDir) {
-        Remove-Item -Recurse -Force $TempDir
+        Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
     }
 }
