@@ -93,31 +93,19 @@ def get_version() -> str:
 
 
 def get_virtual_modules(discovered: dict[str, Path]) -> dict[str, Path]:
-    """Expand discovered modules to include virtual modules from 'full'.
+    """Return discovered modules without any virtual expansion.
 
-    When 'full' is installed, it provides audio, video, and document
-    modules in a single executable. This function creates virtual
-    module entries that delegate to the full executable.
+    This function previously handled 'full' executable expansion but is now
+    kept for backward compatibility. It simply returns the discovered modules
+    as-is since we no longer have a 'full' executable.
 
     Args:
         discovered: Dictionary of discovered module executables.
 
     Returns:
-        Dictionary with virtual modules expanded from 'full'.
+        Dictionary with discovered modules (unchanged).
     """
-    result = dict(discovered)
-
-    # If 'full' is installed, expose its modules as individual commands
-    if "full" in result:
-        full_exe = result["full"]
-        # Add virtual modules that delegate to 'full' with subcommand
-        for module in ["audio", "video", "document"]:
-            if module not in result:
-                result[module] = full_exe
-        # Remove 'full' from user-visible commands
-        del result["full"]
-
-    return result
+    return dict(discovered)
 
 
 # Discover modules at import time for help generation
@@ -166,9 +154,6 @@ class LauncherGroup(HelpColorsGroup):
             return None
 
         exe_path = _discovered_modules[cmd_name]
-        
-        # Check if this is a virtual module delegating to 'full'
-        is_full_delegation = "full" in _raw_discovered_modules and cmd_name in ["audio", "video", "document"]
 
         @click.command(
             cls=HelpColorsCommand,
@@ -185,15 +170,11 @@ class LauncherGroup(HelpColorsGroup):
             help_options_color="green",
         )
         @click.pass_context
-        def delegate_command(ctx: click.Context, _exe: Path = exe_path, _cmd: str = cmd_name, _is_full: bool = is_full_delegation) -> None:
+        def delegate_command(ctx: click.Context, _exe: Path = exe_path, _cmd: str = cmd_name) -> None:
             """Delegate to the module executable."""
             try:
-                # If delegating to 'full', prepend the subcommand
-                if _is_full:
-                    args = [_cmd] + ctx.args
-                else:
-                    args = ctx.args
-                result = subprocess.run([str(_exe)] + args)
+                # Pass all args directly to the module executable
+                result = subprocess.run([str(_exe)] + ctx.args)
                 ctx.exit(result.returncode)
             except FileNotFoundError:
                 raise click.ClickException(f"Could not execute '{_cmd}' module.")

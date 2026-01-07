@@ -49,12 +49,12 @@ Choose which modules to install:
 
 | Variant | Description |
 |---------|-------------|
-| **Full** (default) | All modules: audio, video, and document |
+| **Default** (no variant) | All modules: audio, video, and document (installed as separate executables) |
 | **Audio** | Audio transcription and metadata extraction |
 | **Video** | Video transcription and object detection |
 | **Document** | PDF and image text extraction |
 
-All variants use the same `semantics` command:
+All variants use the same `semantics` command. By default (no variant specified), all three module executables are installed:
 
 ```bash
 # Works with any variant installed

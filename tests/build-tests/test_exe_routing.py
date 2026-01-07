@@ -21,57 +21,56 @@ def run_executable(exe_path: Path, args: list[str], timeout: int = 30) -> subpro
 
 @pytest.mark.build
 class TestExtensionRouting:
-    """Test extension-based auto-routing in full executable."""
+    """Test extension-based auto-routing in module executables."""
 
-    def test_auto_route_audio_extension(self, full_exe: Path, tmp_path: Path) -> None:
+    def test_auto_route_audio_extension(self, audio_exe: Path, tmp_path: Path) -> None:
         """Test auto-routing for audio file extensions."""
         input_file = tmp_path / "test.wav"
         input_file.write_text("dummy audio content")
         output_dir = tmp_path / "output"
 
         result = run_executable(
-            full_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
+            audio_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
         )
         assert result.returncode == 0
         assert "Transcribing" in result.stdout or "transcrib" in result.stdout.lower()
 
-    def test_auto_route_video_extension(self, full_exe: Path, tmp_path: Path) -> None:
+    def test_auto_route_video_extension(self, video_exe: Path, tmp_path: Path) -> None:
         """Test auto-routing for video file extensions."""
         input_file = tmp_path / "test.mp4"
         input_file.write_text("dummy video content")
         output_dir = tmp_path / "output"
 
         result = run_executable(
-            full_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
+            video_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
         )
         assert result.returncode == 0
         assert "Transcribing" in result.stdout or "transcrib" in result.stdout.lower()
 
-    def test_auto_route_document_extension(self, full_exe: Path, tmp_path: Path) -> None:
+    def test_auto_route_document_extension(self, document_exe: Path, tmp_path: Path) -> None:
         """Test auto-routing for document file extensions."""
         input_file = tmp_path / "test.pdf"
         input_file.write_text("dummy document content")
         output_dir = tmp_path / "output"
 
         result = run_executable(
-            full_exe, ["-i", str(input_file), "-o", str(output_dir), "--extract-text"]
+            document_exe, ["-i", str(input_file), "-o", str(output_dir), "--extract-text"]
         )
         assert result.returncode == 0
         assert "Extracting" in result.stdout or "extract" in result.stdout.lower()
 
-    def test_unsupported_extension_error(self, full_exe: Path, tmp_path: Path) -> None:
+    def test_unsupported_extension_error(self, audio_exe: Path, tmp_path: Path) -> None:
         """Test error for unsupported file extension."""
         input_file = tmp_path / "test.xyz"
         input_file.write_text("dummy content")
         output_dir = tmp_path / "output"
 
         result = run_executable(
-            full_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
+            audio_exe, ["-i", str(input_file), "-o", str(output_dir), "--transcribe"]
         )
         assert result.returncode != 0
         combined_output = result.stdout + result.stderr
         assert "unsupported" in combined_output.lower() or "extension" in combined_output.lower()
-
 
 @pytest.mark.build
 class TestCrossModuleRouting:

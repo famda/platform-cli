@@ -8,7 +8,7 @@ set -e
 
 REPO="famda/platform-cli"
 INSTALL_DIR="$HOME/.semantics/bin"
-VARIANT="full"
+VARIANT=""
 PR_NUMBER=""
 
 # Parse arguments
@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
         --variant|-v)
             if [ -z "${2-}" ] || [[ "$2" == -* ]]; then
                 echo "error: --variant requires a value"
-                echo "Usage: $0 <pr_number> [--variant <full|audio|video|document>]"
+                echo "Usage: $0 <pr_number> [--variant <audio|video|document>]"
                 exit 1
             fi
             VARIANT="$2"
@@ -36,19 +36,25 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$PR_NUMBER" ]; then
-    echo "Usage: $0 <pr_number> [--variant <full|audio|video|document>]"
+    echo "Usage: $0 <pr_number> [--variant <audio|video|document>]"
     echo ""
     echo "Examples:"
-    echo "  $0 42"
-    echo "  $0 42 --variant audio"
+    echo "  $0 42                    # Installs all modules"
+    echo "  $0 42 --variant audio    # Installs only audio module"
     exit 1
+fi
+
+# Default to all modules if no variant specified
+if [ -z "$VARIANT" ]; then
+    VARIANT="all"
 fi
 
 # Validate variant
 case $VARIANT in
-    full|audio|video|document) ;;
+    all|audio|video|document) ;;
     *)
-        echo "error: Invalid variant '$VARIANT'. Must be one of: full, audio, video, document"
+        echo "error: Invalid variant '$VARIANT'. Must be one of: audio, video, document"
+        echo "       (or omit --variant to install all modules)"
         exit 1
         ;;
 esac
@@ -68,7 +74,7 @@ if ! gh auth status &> /dev/null; then
 fi
 
 # User-friendly variant description
-if [ "$VARIANT" = "full" ]; then
+if [ "$VARIANT" = "all" ]; then
     VARIANT_DESC="all modules"
 else
     VARIANT_DESC="$VARIANT module"
@@ -156,10 +162,16 @@ info "Downloading..."
 LAUNCHER_ARTIFACT="semantics-pr-$PR_NUMBER-$PLATFORM-$ARCH"
 download_and_install "$LAUNCHER_ARTIFACT" "semantics"
 
-# Install the module variant
-if [ "$VARIANT" = "full" ]; then
-    MODULE_ARTIFACT="semantics-full-pr-$PR_NUMBER-$PLATFORM-$ARCH"
-    download_and_install "$MODULE_ARTIFACT" "semantics-full"
+# Install the module variant(s)
+if [ "$VARIANT" = "all" ]; then
+    # Install all individual modules
+    info "Installing all modules..."
+    AUDIO_ARTIFACT="semantics-audio-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$AUDIO_ARTIFACT" "semantics-audio"
+    VIDEO_ARTIFACT="semantics-video-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$VIDEO_ARTIFACT" "semantics-video"
+    DOCUMENT_ARTIFACT="semantics-document-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$DOCUMENT_ARTIFACT" "semantics-document"
 else
     MODULE_ARTIFACT="semantics-$VARIANT-pr-$PR_NUMBER-$PLATFORM-$ARCH"
     download_and_install "$MODULE_ARTIFACT" "semantics-$VARIANT"
