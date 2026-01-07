@@ -1,6 +1,23 @@
 # CHANGELOG
 
 
+## v0.1.2 (2026-01-07)
+
+### Bug Fixes
+
+* fix: make launcher invisible to end users (#20) ([`26d5a61`](https://github.com/famda/platform-cli/commit/26d5a6150f1fbdf6c6abae7518f38c71ca3fadb4))
+
+### Testing
+
+* test: add comprehensive test suite for built executables including audio, video, and document processing ([`ba91496`](https://github.com/famda/platform-cli/commit/ba91496693026f4ea3fa3a928476abe882f0f3b0))
+
+### Unknown
+
+* Add unified launcher executable for modular CLI (#19)
+
+Refactor Semantics CLI to use a new launcher executable (`semantics`) that discovers and delegates to installed module executables (audio, video, document, full). Update build system, install scripts, and documentation to always install the launcher and selected modules. Add launcher.py with dynamic module discovery and delegation logic. Revise tests and infrastructure to support the new architecture. Update .gitignore and pyproject.toml for launcher support. ([`12a1dc2`](https://github.com/famda/platform-cli/commit/12a1dc24392e14211c334f92f5b0bd2e68f3232c))
+
+
 ## v0.1.1 (2026-01-07)
 
 ### Bug Fixes
