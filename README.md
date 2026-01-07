@@ -23,9 +23,11 @@ Install a specific variant (smaller download):
 ```bash
 # Linux/macOS
 curl -fsSL https://raw.githubusercontent.com/famda/platform-cli/main/docs/install.sh | bash -s -- --variant audio
+```
 
+```powershell
 # Windows
-irm https://raw.githubusercontent.com/famda/platform-cli/main/docs/install.ps1 | iex; Install-Semantics -Variant audio
+iex "& { $(irm https://raw.githubusercontent.com/famda/platform-cli/main/docs/install.ps1) } -Variant audio"
 ```
 
 ## Quick Start

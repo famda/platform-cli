@@ -106,7 +106,7 @@ try {
     # Verify
     $InstalledExe = Join-Path $InstallDir $FinalExeName
     Write-Info "Successfully installed $ExeName from PR #$PRNumber!"
-    & $InstalledExe version
+    & $InstalledExe --version
 
     Write-Host ""
     Write-Host "Restart your terminal or run:" -ForegroundColor Yellow

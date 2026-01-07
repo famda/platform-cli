@@ -205,7 +205,7 @@ export PATH="$INSTALL_DIR:$PATH"
 
 # Verify
 info "Successfully installed $EXE_NAME from PR #$PR_NUMBER!"
-"$INSTALL_DIR/$FINAL_EXE_NAME" version
+"$INSTALL_DIR/$FINAL_EXE_NAME" --version
 
 echo ""
 echo -e "\033[33mRestart your terminal or run:\033[0m"
