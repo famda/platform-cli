@@ -46,10 +46,17 @@ info() { echo -e "\033[32m==>\033[0m $1"; }
 warn() { echo -e "\033[33mwarning:\033[0m $1"; }
 error() { echo -e "\033[31merror:\033[0m $1"; exit 1; }
 
-if [ "$PRERELEASE" = true ]; then
-    info "Installing semantics with $VARIANT module (development build)..."
+# User-friendly variant description
+if [ "$VARIANT" = "full" ]; then
+    VARIANT_DESC="all modules"
 else
-    info "Installing semantics with $VARIANT module..."
+    VARIANT_DESC="$VARIANT module"
+fi
+
+if [ "$PRERELEASE" = true ]; then
+    info "Installing semantics ($VARIANT_DESC) - development build..."
+else
+    info "Installing semantics ($VARIANT_DESC)..."
 fi
 
 # Detect OS and architecture
@@ -97,10 +104,11 @@ trap "rm -rf $TEMP_DIR" EXIT
 # Create install directory
 mkdir -p "$INSTALL_DIR"
 
-# Function to download and install an executable
+# Function to download and install an executable (silent mode available)
 download_and_install() {
     local exe_name="$1"
     local final_name="$2"
+    local silent="${3:-false}"
     
     # Build download filename
     # Release format: semantics-v0.1.0-linux-x86_64.zip or semantics-audio-v0.1.0-linux-x86_64.zip
@@ -113,38 +121,40 @@ download_and_install() {
     
     URL="https://github.com/$REPO/releases/download/$VERSION/$FILENAME"
     
-    info "Downloading $exe_name..."
+    if [ "$silent" != "true" ]; then
+        info "Downloading..."
+    fi
     if ! curl -fsSL "$URL" -o "$TEMP_DIR/$FILENAME"; then
         error "Download failed. Check if version '$VERSION' exists at https://github.com/$REPO/releases"
     fi
     
     # Extract
-    info "Extracting $exe_name..."
+    if [ "$silent" != "true" ]; then
+        info "Extracting..."
+    fi
     unzip -q -o "$TEMP_DIR/$FILENAME" -d "$TEMP_DIR/extract_$exe_name"
     
     # Find the executable
     EXTRACTED_EXE=$(find "$TEMP_DIR/extract_$exe_name" -type f -name "semantics*" ! -name "*.zip" | head -1)
     if [ -z "$EXTRACTED_EXE" ]; then
-        error "Could not find executable in downloaded archive for $exe_name"
+        error "Could not find executable in downloaded archive"
     fi
     
     mv "$EXTRACTED_EXE" "$INSTALL_DIR/$final_name"
     chmod +x "$INSTALL_DIR/$final_name"
-    info "Installed: $final_name"
 }
 
-# Always install the launcher first (unified 'semantics' command)
-download_and_install "semantics" "semantics"
+# Download and install components (silently for internal components)
+download_and_install "semantics" "semantics" "true"
 
 # Install the module variant
 if [ "$VARIANT" = "full" ]; then
-    # Full variant includes all modules in one executable
-    download_and_install "semantics-full" "semantics-full"
-    info "Full version installed. Use 'semantics audio', 'semantics video', or 'semantics document'."
+    download_and_install "semantics-full" "semantics-full" "true"
 else
-    # Individual module variant
-    download_and_install "semantics-$VARIANT" "semantics-$VARIANT"
+    download_and_install "semantics-$VARIANT" "semantics-$VARIANT" "true"
 fi
+
+info "Installing..."
 
 # Add to PATH
 add_to_path() {
@@ -156,14 +166,12 @@ add_to_path() {
             echo "" >> "$shell_config"
             echo "# Added by semantics installer" >> "$shell_config"
             echo "$path_line" >> "$shell_config"
-            info "Added to $shell_config"
         fi
     fi
 }
 
 if [ -n "$GITHUB_ACTIONS" ]; then
     # GitHub Actions: add to GITHUB_PATH
-    info "Adding to GITHUB_PATH for this workflow..."
     echo "$INSTALL_DIR" >> "$GITHUB_PATH"
     export PATH="$INSTALL_DIR:$PATH"
 else
@@ -184,7 +192,6 @@ else
                     echo "" >> "$FISH_CONFIG"
                     echo "# Added by semantics installer" >> "$FISH_CONFIG"
                     echo "set -gx PATH \$HOME/.semantics/bin \$PATH" >> "$FISH_CONFIG"
-                    info "Added to $FISH_CONFIG"
                 fi
             fi
             ;;
@@ -202,14 +209,17 @@ fi
 
 # Verify installation
 info "Installation complete!"
-"$INSTALL_DIR/semantics" --version
-
 echo ""
-info "Installed executables:"
-ls -la "$INSTALL_DIR"/semantics* 2>/dev/null || true
+"$INSTALL_DIR/semantics" --version
 
 echo ""
 echo -e "\033[33mRestart your terminal or run:\033[0m"
 echo "  export PATH=\"\$HOME/.semantics/bin:\$PATH\""
 echo ""
-echo "Then use: semantics $VARIANT --help"
+if [ "$VARIANT" = "full" ]; then
+    echo "Usage: semantics audio --help"
+    echo "       semantics video --help"
+    echo "       semantics document --help"
+else
+    echo "Usage: semantics $VARIANT --help"
+fi

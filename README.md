@@ -18,7 +18,7 @@ irm https://raw.githubusercontent.com/famda/platform-cli/main/docs/install.ps1 |
 
 ### Install Options
 
-Install a specific variant (smaller download):
+Install a specific module (smaller download):
 
 ```bash
 # Linux/macOS
@@ -45,16 +45,16 @@ semantics video clip.mp4 -o ./output --detect-objects
 
 ## Variants
 
-The installer always includes the unified `semantics` launcher. Choose which module(s) to install:
+Choose which modules to install:
 
-| Variant | Executables Installed | Description |
-|---------|----------------------|-------------|
-| **Full** | `semantics` + `semantics-full` | All modules bundled together |
-| **Audio** | `semantics` + `semantics-audio` | Audio transcription and metadata extraction |
-| **Video** | `semantics` + `semantics-video` | Video transcription and object detection |
-| **Document** | `semantics` + `semantics-document` | PDF and image text extraction |
+| Variant | Description |
+|---------|-------------|
+| **Full** (default) | All modules: audio, video, and document |
+| **Audio** | Audio transcription and metadata extraction |
+| **Video** | Video transcription and object detection |
+| **Document** | PDF and image text extraction |
 
-All variants use the same unified `semantics` command:
+All variants use the same `semantics` command:
 
 ```bash
 # Works with any variant installed
@@ -63,7 +63,7 @@ semantics video video.mp4 -o ./output --detect-objects
 semantics document scan.pdf -o ./output --extract-text
 ```
 
-You can install multiple modules - the launcher discovers all installed modules automatically.
+You can install multiple modules - they will all be available through the `semantics` command.
 
 ## Usage
 
