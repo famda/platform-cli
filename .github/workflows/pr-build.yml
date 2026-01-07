@@ -78,15 +78,13 @@ jobs:
 
             ### Install this PR build
 
-            You can test this PR by downloading the artifacts from the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+            > **Requires [GitHub CLI](https://cli.github.com/)** to be installed and authenticated (`gh auth login`)
 
-            #### Using GitHub CLI (recommended)
+            #### Full CLI (all modules)
 
             **Windows (PowerShell)**
             ```powershell
-            irm https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.ps1 | iex
-            # Then run:
-            Install-SemanticsPR -PRNumber ${{ github.event.pull_request.number }}
+            iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.ps1) } -PRNumber ${{ github.event.pull_request.number }}"
             ```
 
             **Linux/macOS (Bash)**
@@ -94,15 +92,36 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.sh | bash -s -- ${{ github.event.pull_request.number }}
             ```
 
-            #### Manual download
+            #### Specific variant (audio, video, or document)
+
+            **Windows (PowerShell)**
+            ```powershell
+            iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.ps1) } -PRNumber ${{ github.event.pull_request.number }} -Variant audio"
+            ```
+
+            **Linux/macOS (Bash)**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.sh | bash -s -- ${{ github.event.pull_request.number }} --variant audio
+            ```
+
+            <details>
+            <summary>📦 Available variants</summary>
+
+            | Variant | Description | Command |
+            |---------|-------------|---------|
+            | `full` (default) | All modules included | `-Variant full` / `--variant full` |
+            | `audio` | Audio processing only | `-Variant audio` / `--variant audio` |
+            | `video` | Video processing only | `-Variant video` / `--variant video` |
+            | `document` | Document processing only | `-Variant document` / `--variant document` |
+
+            </details>
+
+            <details>
+            <summary>📥 Manual download</summary>
 
             1. Go to [Actions → PR Build → Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            2. Download the artifact for your platform (e.g., `semantics-pr-${{ github.event.pull_request.number }}-windows-x86_64`)
+            2. Download the artifact for your platform
             3. Extract and run
-
-            ---
-            <details>
-            <summary>Available artifacts</summary>
 
             | Variant | Linux | macOS | Windows |
             |---------|-------|-------|---------|
