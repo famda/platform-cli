@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Build script for creating PyInstaller executables.
 
-This script creates standalone executables for different module variants:
-- semantics: Lightweight launcher for unified CLI experience
+This script creates standalone executables for different variants:
+- semantics: Main entry point executable
 - semantics-audio: Audio processing only
 - semantics-video: Video processing only
 - semantics-document: Document processing only
-- semantics-full: Full version with all modules (deprecated, use launcher + modules)
+- semantics-full: All modules bundled together
 
 Usage:
-    python build.py all        # Build all variants (launcher + modules)
-    python build.py launcher   # Build launcher only
+    python build.py all        # Build all variants
+    python build.py launcher   # Build main entry point only
     python build.py audio      # Build audio variant only
     python build.py video      # Build video variant only
     python build.py document   # Build document variant only
-    python build.py full       # Build full variant (all modules in one)
+    python build.py full       # Build full variant (all modules)
 """
 
 from __future__ import annotations

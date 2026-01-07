@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Lightweight launcher for unified semantics CLI experience.
+"""Unified entry point for semantics CLI.
 
 This module provides a unified entry point that discovers and delegates to
 installed module executables. When users install individual modules (audio,
-video, document), this launcher allows them to use a single `semantics`
-command that routes to the appropriate module.
+video, document), this allows them to use a single `semantics` command
+that routes to the appropriate module.
 
-Architecture Note:
------------------
-This launcher is different from cli.py because:
-- cli.py: Modules are bundled INSIDE the executable (used by semantics-full, semantics-audio, etc.)
-- launcher.py: Modules are SEPARATE executables that need subprocess delegation
+Architecture Note (internal - not exposed to users):
+----------------------------------------------------
+This is different from cli.py because:
+- cli.py: Modules are bundled INSIDE the executable (used by module executables)
+- This file: Modules are SEPARATE executables that need subprocess delegation
 
 When a user installs only the audio module, they get:
-  ~/.semantics/bin/semantics       <- This launcher
+  ~/.semantics/bin/semantics       <- This entry point
   ~/.semantics/bin/semantics-audio <- The actual audio module
 
-The launcher discovers semantics-* executables and delegates to them.
+This discovers semantics-* executables and delegates to them.
 """
 
 from __future__ import annotations
@@ -48,6 +48,9 @@ def discover_modules() -> dict[str, Path]:
     Scans the installation directory for executables matching the pattern
     'semantics-{module}' (or 'semantics-{module}.exe' on Windows).
 
+    The 'full' module is treated specially - it provides all modules in one
+    executable but is presented to users as individual module commands.
+
     Returns:
         Dictionary mapping module names to their executable paths.
     """
@@ -63,7 +66,7 @@ def discover_modules() -> dict[str, Path]:
             continue
 
         name = item.name
-        # Skip the launcher itself
+        # Skip the main entry point itself
         if name == f"semantics{exe_suffix}":
             continue
 
@@ -81,7 +84,7 @@ def discover_modules() -> dict[str, Path]:
 
 
 def get_version() -> str:
-    """Get the launcher version."""
+    """Get the CLI version."""
     try:
         from semantics import __version__
         return __version__
@@ -89,8 +92,37 @@ def get_version() -> str:
         return "unknown"
 
 
+def get_virtual_modules(discovered: dict[str, Path]) -> dict[str, Path]:
+    """Expand discovered modules to include virtual modules from 'full'.
+
+    When 'full' is installed, it provides audio, video, and document
+    modules in a single executable. This function creates virtual
+    module entries that delegate to the full executable.
+
+    Args:
+        discovered: Dictionary of discovered module executables.
+
+    Returns:
+        Dictionary with virtual modules expanded from 'full'.
+    """
+    result = dict(discovered)
+
+    # If 'full' is installed, expose its modules as individual commands
+    if "full" in result:
+        full_exe = result["full"]
+        # Add virtual modules that delegate to 'full' with subcommand
+        for module in ["audio", "video", "document"]:
+            if module not in result:
+                result[module] = full_exe
+        # Remove 'full' from user-visible commands
+        del result["full"]
+
+    return result
+
+
 # Discover modules at import time for help generation
-_discovered_modules = discover_modules()
+_raw_discovered_modules = discover_modules()
+_discovered_modules = get_virtual_modules(_raw_discovered_modules)
 
 
 def generate_help_text() -> str:
@@ -98,9 +130,8 @@ def generate_help_text() -> str:
     lines = [
         "Semantics CLI - Unified interface for media intelligence",
         "",
-        "Extract meaning, not just metadata. Composable AI operations designed for developers scaling intelligent workflows",
-        "",
-        "Process files directly with auto-detection based on extension:",
+        "Extract meaning, not just metadata. Composable AI operations",
+        "designed for developers scaling intelligent workflows.",
     ]
 
     if _discovered_modules:
@@ -112,8 +143,6 @@ def generate_help_text() -> str:
             lines.append("  semantics video video.mp4 -o ./output --detect-objects")
         if "document" in _discovered_modules:
             lines.append("  semantics document scan.pdf -o ./output --extract-text")
-        if "full" in _discovered_modules:
-            lines.append("  semantics -i input.wav -o ./output --transcribe")
     else:
         lines.append("")
         lines.append("No modules installed.")
@@ -125,7 +154,7 @@ def generate_help_text() -> str:
 
 
 class LauncherGroup(HelpColorsGroup):
-    """Custom group that delegates unknown commands to module executables."""
+    """Custom group that delegates commands to module executables."""
 
     def list_commands(self, ctx: click.Context) -> list[str]:
         """List available module commands."""
@@ -137,23 +166,31 @@ class LauncherGroup(HelpColorsGroup):
             return None
 
         exe_path = _discovered_modules[cmd_name]
+        
+        # Check if this is a virtual module delegating to 'full'
+        is_full_delegation = "full" in _raw_discovered_modules and cmd_name in ["audio", "video", "document"]
 
         @click.command(
             cls=HelpColorsCommand,
             name=cmd_name,
             context_settings={"allow_extra_args": True, "allow_interspersed_args": True},
-            help=f"Delegate to {cmd_name} module executable.",
+            help=f"Process {cmd_name} files.",
             help_headers_color="yellow",
             help_options_color="green",
         )
         @click.pass_context
-        def delegate_command(ctx: click.Context) -> None:
+        def delegate_command(ctx: click.Context, _exe: Path = exe_path, _cmd: str = cmd_name, _is_full: bool = is_full_delegation) -> None:
             """Delegate to the module executable."""
             try:
-                result = subprocess.run([str(exe_path)] + ctx.args)
+                # If delegating to 'full', prepend the subcommand
+                if _is_full:
+                    args = [_cmd] + ctx.args
+                else:
+                    args = ctx.args
+                result = subprocess.run([str(_exe)] + args)
                 ctx.exit(result.returncode)
             except FileNotFoundError:
-                raise click.ClickException(f"Could not execute module '{cmd_name}'.")
+                raise click.ClickException(f"Could not execute '{_cmd}' module.")
             except KeyboardInterrupt:
                 ctx.exit(130)
 
@@ -167,10 +204,10 @@ class LauncherGroup(HelpColorsGroup):
     help_headers_color="yellow",
     help_options_color="green",
 )
-@click.version_option(version=get_version(), prog_name="semantics launcher")
+@click.version_option(version=get_version(), prog_name="semantics")
 @click.pass_context
 def main(ctx: click.Context) -> None:
-    """Unified launcher for semantics CLI modules."""
+    """Semantics CLI - Unified interface for media intelligence."""
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 

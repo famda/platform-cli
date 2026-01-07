@@ -138,7 +138,9 @@ class TestLauncherCLI:
         """Test main with --version flag shows version."""
         result = runner.invoke(launcher.main, ["--version"])
         assert result.exit_code == 0
-        assert "semantics launcher" in result.output.lower()
+        # Should show 'semantics' not 'semantics launcher'
+        assert "semantics" in result.output.lower()
+        assert "launcher" not in result.output.lower()
 
     def test_main_lists_installed_modules(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test main lists installed modules in help."""
@@ -222,3 +224,47 @@ class TestGenerateHelpText:
         with patch.object(launcher, "_discovered_modules", {}):
             help_text = launcher.generate_help_text()
             assert "No modules installed" in help_text
+
+
+class TestGetVirtualModules:
+    """Tests for get_virtual_modules function."""
+
+    def test_expands_full_to_individual_modules(self) -> None:
+        """Test that 'full' is expanded to audio, video, document modules."""
+        full_exe = Path("/bin/semantics-full")
+        discovered = {"full": full_exe}
+
+        result = launcher.get_virtual_modules(discovered)
+
+        # Should have audio, video, document pointing to full
+        assert "audio" in result
+        assert "video" in result
+        assert "document" in result
+        assert result["audio"] == full_exe
+        assert result["video"] == full_exe
+        assert result["document"] == full_exe
+        # 'full' should be hidden from user
+        assert "full" not in result
+
+    def test_does_not_override_existing_modules(self) -> None:
+        """Test that existing modules are not overridden by full expansion."""
+        full_exe = Path("/bin/semantics-full")
+        audio_exe = Path("/bin/semantics-audio")
+        discovered = {"full": full_exe, "audio": audio_exe}
+
+        result = launcher.get_virtual_modules(discovered)
+
+        # audio should still point to its own executable
+        assert result["audio"] == audio_exe
+        # video and document should point to full
+        assert result["video"] == full_exe
+        assert result["document"] == full_exe
+
+    def test_no_full_returns_unchanged(self) -> None:
+        """Test that without 'full', modules are returned unchanged."""
+        audio_exe = Path("/bin/semantics-audio")
+        discovered = {"audio": audio_exe}
+
+        result = launcher.get_virtual_modules(discovered)
+
+        assert result == {"audio": audio_exe}

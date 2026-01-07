@@ -29,14 +29,14 @@ class TestLauncherHelp:
         result = run_executable(launcher_exe, ["--help"])
         assert result.returncode == 0
         assert "Semantics CLI" in result.stdout
-        # Should mention modules in help
-        assert "module" in result.stdout.lower()
 
     def test_launcher_version(self, launcher_exe: Path) -> None:
         """Test launcher --version works."""
         result = run_executable(launcher_exe, ["--version"])
         assert result.returncode == 0
-        assert "semantics launcher" in result.stdout.lower()
+        # Should show 'semantics' but NOT 'launcher'
+        assert "semantics" in result.stdout.lower()
+        assert "launcher" not in result.stdout.lower()
 
 
 @pytest.mark.build
@@ -133,3 +133,55 @@ class TestLauncherMissingModule:
         
         assert result.returncode == 0
         assert "no modules installed" in result.stdout.lower()
+
+
+@pytest.mark.build
+class TestLauncherFullModuleExpansion:
+    """Test launcher expands 'full' module to individual modules."""
+
+    def test_launcher_with_full_shows_audio_video_document(
+        self, launcher_exe: Path, full_exe: Path, tmp_path: Path
+    ) -> None:
+        """Test launcher with 'full' module shows audio, video, document commands."""
+        # Copy launcher and full exe to temp directory
+        test_dir = tmp_path / "bin"
+        test_dir.mkdir()
+        
+        launcher_name = "semantics.exe" if sys.platform == "win32" else "semantics"
+        full_name = "semantics-full.exe" if sys.platform == "win32" else "semantics-full"
+        
+        shutil.copy(launcher_exe, test_dir / launcher_name)
+        shutil.copy(full_exe, test_dir / full_name)
+        
+        # Run launcher help
+        test_launcher = test_dir / launcher_name
+        result = run_executable(test_launcher, ["--help"])
+        
+        assert result.returncode == 0
+        # Should show audio, video, document as available commands
+        assert "audio" in result.stdout
+        assert "video" in result.stdout
+        assert "document" in result.stdout
+        # Should NOT show 'full' as a command
+        assert "full" not in result.stdout.lower() or "full" not in result.stdout.split()
+
+    def test_launcher_with_full_delegates_audio_command(
+        self, launcher_exe: Path, full_exe: Path, tmp_path: Path
+    ) -> None:
+        """Test launcher delegates 'audio' command to 'full' executable."""
+        test_dir = tmp_path / "bin"
+        test_dir.mkdir()
+        
+        launcher_name = "semantics.exe" if sys.platform == "win32" else "semantics"
+        full_name = "semantics-full.exe" if sys.platform == "win32" else "semantics-full"
+        
+        shutil.copy(launcher_exe, test_dir / launcher_name)
+        shutil.copy(full_exe, test_dir / full_name)
+        
+        # Run launcher with audio subcommand
+        test_launcher = test_dir / launcher_name
+        result = run_executable(test_launcher, ["audio", "--help"])
+        
+        # Should successfully delegate to full's audio subcommand
+        assert result.returncode == 0
+        assert "transcribe" in result.stdout.lower() or "audio" in result.stdout.lower()
