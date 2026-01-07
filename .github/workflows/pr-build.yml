@@ -109,12 +109,12 @@ jobs:
 
             | Variant | Description | Command |
             |---------|-------------|---------|
-            | `full` (default) | All modules included | `-Variant full` / `--variant full` |
+            | (default) | All modules included | (omit `-Variant` / `--variant`) |
             | `audio` | Audio processing only | `-Variant audio` / `--variant audio` |
             | `video` | Video processing only | `-Variant video` / `--variant video` |
             | `document` | Document processing only | `-Variant document` / `--variant document` |
 
-            **Note:** The `full` variant installs all individual module executables (audio, video, document) separately.
+            **Note:** By default (no variant specified), all individual module executables (audio, video, document) are installed.
 
             </details>
 
@@ -132,6 +132,6 @@ jobs:
             | Video | `semantics-video-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-video-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-video-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
             | Document | `semantics-document-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-document-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-document-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
 
-            **Note:** For `full` variant, download the launcher plus all three module variants (audio, video, document).
+            **Note:** For all modules, download the launcher plus all three module variants (audio, video, document).
 
             </details>

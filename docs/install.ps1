@@ -5,8 +5,8 @@
 
 param(
     [switch]$Prerelease,
-    [ValidateSet("full", "audio", "video", "document")]
-    [string]$Variant = "full"
+    [ValidateSet("audio", "video", "document")]
+    [string]$Variant = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,8 +18,13 @@ function Write-Info { param($msg) Write-Host "==> " -ForegroundColor Green -NoNe
 function Write-Warn { param($msg) Write-Host "warning: " -ForegroundColor Yellow -NoNewline; Write-Host $msg }
 function Write-Err { param($msg) Write-Host "error: " -ForegroundColor Red -NoNewline; Write-Host $msg; exit 1 }
 
+# Default to all modules if no variant specified
+if ([string]::IsNullOrEmpty($Variant)) {
+    $Variant = "all"
+}
+
 # User-friendly variant description
-$VariantDesc = if ($Variant -eq "full") { "all modules" } else { "$Variant module" }
+$VariantDesc = if ($Variant -eq "all") { "all modules" } else { "$Variant module" }
 
 if ($Prerelease) {
     Write-Info "Installing semantics ($VariantDesc) - development build..."
@@ -101,8 +106,8 @@ try {
     Install-Executable -ExeName "semantics" -FinalName "semantics.exe" -Silent
     
     # Install the module variant(s)
-    if ($Variant -eq "full") {
-        # For "full", install all individual modules
+    if ($Variant -eq "all") {
+        # Install all individual modules
         Write-Info "Installing all modules..."
         Install-Executable -ExeName "semantics-audio" -FinalName "semantics-audio.exe" -Silent
         Install-Executable -ExeName "semantics-video" -FinalName "semantics-video.exe" -Silent
@@ -137,7 +142,7 @@ try {
     Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
     Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
     Write-Host ""
-    if ($Variant -eq "full") {
+    if ($Variant -eq "all") {
         Write-Host "Usage: semantics audio --help"
         Write-Host "       semantics video --help"
         Write-Host "       semantics document --help"

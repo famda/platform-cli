@@ -6,8 +6,8 @@
 param(
     [Parameter(Mandatory=$true)]
     [int]$PRNumber,
-    [ValidateSet("full", "audio", "video", "document")]
-    [string]$Variant = "full"
+    [ValidateSet("audio", "video", "document")]
+    [string]$Variant = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,8 +30,13 @@ if ($LASTEXITCODE -ne 0) {
     Write-Err "GitHub CLI not authenticated. Run 'gh auth login' first."
 }
 
+# Default to all modules if no variant specified
+if ([string]::IsNullOrEmpty($Variant)) {
+    $Variant = "all"
+}
+
 # User-friendly variant description
-$VariantDesc = if ($Variant -eq "full") { "all modules" } else { "$Variant module" }
+$VariantDesc = if ($Variant -eq "all") { "all modules" } else { "$Variant module" }
 
 Write-Info "Installing semantics ($VariantDesc) from PR #$PRNumber..."
 
@@ -105,8 +110,8 @@ try {
     Install-Artifact -ArtifactName $LauncherArtifact -FinalName "semantics.exe"
     
     # Install the module variant(s)
-    if ($Variant -eq "full") {
-        # For "full", install all individual modules
+    if ($Variant -eq "all") {
+        # Install all individual modules
         Write-Info "Installing all modules..."
         $AudioArtifact = "semantics-audio-pr-$PRNumber-windows-$Arch"
         Install-Artifact -ArtifactName $AudioArtifact -FinalName "semantics-audio.exe"
@@ -138,7 +143,7 @@ try {
     Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
     Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
     Write-Host ""
-    if ($Variant -eq "full") {
+    if ($Variant -eq "all") {
         Write-Host "Usage: semantics audio --help"
         Write-Host "       semantics video --help"
         Write-Host "       semantics document --help"

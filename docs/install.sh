@@ -9,7 +9,7 @@ set -e
 REPO="famda/platform-cli"
 INSTALL_DIR="$HOME/.semantics/bin"
 PRERELEASE=false
-VARIANT="full"
+VARIANT=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --variant|-v)
             if [ -z "${2-}" ] || [[ "$2" == -* ]]; then
-                echo "error: --variant requires a value (full, audio, video, document)"
+                echo "error: --variant requires a value (audio, video, document)"
                 exit 1
             fi
             VARIANT="$2"
@@ -33,11 +33,17 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Default to all modules if no variant specified
+if [ -z "$VARIANT" ]; then
+    VARIANT="all"
+fi
+
 # Validate variant
 case $VARIANT in
-    full|audio|video|document) ;;
+    all|audio|video|document) ;;
     *)
-        echo "error: Invalid variant '$VARIANT'. Must be one of: full, audio, video, document"
+        echo "error: Invalid variant '$VARIANT'. Must be one of: audio, video, document"
+        echo "       (or omit --variant to install all modules)"
         exit 1
         ;;
 esac
@@ -47,7 +53,7 @@ warn() { echo -e "\033[33mwarning:\033[0m $1"; }
 error() { echo -e "\033[31merror:\033[0m $1"; exit 1; }
 
 # User-friendly variant description
-if [ "$VARIANT" = "full" ]; then
+if [ "$VARIANT" = "all" ]; then
     VARIANT_DESC="all modules"
 else
     VARIANT_DESC="$VARIANT module"
@@ -148,8 +154,8 @@ download_and_install() {
 download_and_install "semantics" "semantics" "true"
 
 # Install the module variant(s)
-if [ "$VARIANT" = "full" ]; then
-    # For "full", install all individual modules
+if [ "$VARIANT" = "all" ]; then
+    # Install all individual modules
     info "Installing all modules..."
     download_and_install "semantics-audio" "semantics-audio" "true"
     download_and_install "semantics-video" "semantics-video" "true"
@@ -220,7 +226,7 @@ echo ""
 echo -e "\033[33mRestart your terminal or run:\033[0m"
 echo "  export PATH=\"\$HOME/.semantics/bin:\$PATH\""
 echo ""
-if [ "$VARIANT" = "full" ]; then
+if [ "$VARIANT" = "all" ]; then
     echo "Usage: semantics audio --help"
     echo "       semantics video --help"
     echo "       semantics document --help"
