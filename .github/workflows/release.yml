@@ -52,10 +52,21 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           root_options: "-vv"
 
-  attach-artifacts:
-    name: Attach ${{ matrix.artifact }} to release
-    runs-on: ubuntu-latest
+  # Build artifacts with the correct release version
+  build:
+    name: Build Release Artifacts
     needs: release
+    if: needs.release.outputs.released == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+      git_sha: ${{ github.sha }}
+      ref: ${{ needs.release.outputs.tag }}
+
+  attach-artifacts:
+    name: Attach ${{ matrix.target }} (${{ matrix.platform }}) to release
+    runs-on: ubuntu-latest
+    needs: [release, build]
 
     if: needs.release.outputs.released == 'true'
 
@@ -118,15 +129,10 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: actions/download-artifact@v4
         with:
-          workflow: ci.yml
-          commit: ${{ github.event.workflow_run.head_commit.id }}
           name: ${{ matrix.artifact }}
           path: artifacts
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow_conclusion: success
-          check_artifacts: true
 
       - name: Rename artifact with version
         run: |
