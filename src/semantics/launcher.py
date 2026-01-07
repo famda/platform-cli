@@ -173,8 +173,14 @@ class LauncherGroup(HelpColorsGroup):
         @click.command(
             cls=HelpColorsCommand,
             name=cmd_name,
-            context_settings={"allow_extra_args": True, "allow_interspersed_args": True},
-            help=f"Process {cmd_name} files.",
+            # Disable Click's automatic help handling - let the subprocess handle it
+            context_settings={
+                "allow_extra_args": True,
+                "allow_interspersed_args": True,
+                "ignore_unknown_options": True,
+            },
+            # No help text - the real command will provide it
+            add_help_option=False,
             help_headers_color="yellow",
             help_options_color="green",
         )
