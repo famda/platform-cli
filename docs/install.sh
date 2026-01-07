@@ -19,6 +19,10 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --variant|-v)
+            if [ -z "${2-}" ] || [[ "$2" == -* ]]; then
+                echo "error: --variant requires a value (full, audio, video, document)"
+                exit 1
+            fi
             VARIANT="$2"
             shift 2
             ;;
@@ -80,8 +84,14 @@ if [ "$PRERELEASE" = true ]; then
     VERSION="dev"
     info "Development build: $VERSION"
 else
-    VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    if [ -z "$VERSION" ]; then
+    # Use jq if available, otherwise fall back to grep/sed
+    RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")
+    if command -v jq >/dev/null 2>&1; then
+        VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+    else
+        VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    fi
+    if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
         error "Could not determine latest version. Check https://github.com/$REPO/releases"
     fi
     info "Latest version: $VERSION"

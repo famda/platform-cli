@@ -71,53 +71,57 @@ Write-Info "Downloading $Url..."
 New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 try {
     Invoke-WebRequest -Uri $Url -OutFile $ZipPath
-} catch {
+
+    # Extract
+    Write-Info "Extracting..."
+    Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
+
+    # Find the executable in extracted contents
+    $ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
+    if (-not $ExtractedExe) {
+        Write-Err "Could not find executable in downloaded archive"
+    }
+
+    # Install
+    Write-Info "Installing to $InstallDir..."
+    New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+    # Determine final executable name (always use semantics.exe for full, semantics-variant.exe for others)
+    $FinalExeName = if ($Variant -eq "full") { "semantics.exe" } else { "semantics-$Variant.exe" }
+    Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalExeName) -Force
+
+    # Add to PATH
+    if ($env:GITHUB_ACTIONS) {
+        # GitHub Actions: add to GITHUB_PATH
+        Write-Info "Adding to GITHUB_PATH for this workflow..."
+        $InstallDir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+        $env:Path = "$InstallDir;$env:Path"
+    } else {
+        # Regular install: add to user PATH if not already there
+        $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        if ($UserPath -notlike "*$InstallDir*") {
+            Write-Info "Adding $InstallDir to PATH..."
+            [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallDir", "User")
+            $env:Path = "$env:Path;$InstallDir"
+        }
+    }
+
+    # Verify
+    $InstalledExe = Join-Path $InstallDir $FinalExeName
+    Write-Info "Successfully installed $ExeName!"
+    & $InstalledExe version
+
+    Write-Host ""
+    Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
+    Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
+}
+catch {
     Write-Err "Download failed. Check if version '$Version' exists at https://github.com/$Repo/releases"
 }
-
-# Extract
-Write-Info "Extracting..."
-Expand-Archive -Path $ZipPath -DestinationPath $TempDir -Force
-
-# Find the executable in extracted contents
-$ExtractedExe = Get-ChildItem -Path $TempDir -Filter "*.exe" | Where-Object { $_.Name -like "semantics*" } | Select-Object -First 1
-if (-not $ExtractedExe) {
-    Write-Err "Could not find executable in downloaded archive"
-}
-
-# Install
-Write-Info "Installing to $InstallDir..."
-New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-
-# Determine final executable name (always use semantics.exe for full, semantics-variant.exe for others)
-$FinalExeName = if ($Variant -eq "full") { "semantics.exe" } else { "semantics-$Variant.exe" }
-Move-Item -Path $ExtractedExe.FullName -Destination (Join-Path $InstallDir $FinalExeName) -Force
-
-# Cleanup
-Remove-Item -Recurse -Force $TempDir
-
-# Add to PATH
-if ($env:GITHUB_ACTIONS) {
-    # GitHub Actions: add to GITHUB_PATH
-    Write-Info "Adding to GITHUB_PATH for this workflow..."
-    $InstallDir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-    $env:Path = "$InstallDir;$env:Path"
-} else {
-    # Regular install: add to user PATH if not already there
-    $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    if ($UserPath -notlike "*$InstallDir*") {
-        Write-Info "Adding $InstallDir to PATH..."
-        [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallDir", "User")
-        $env:Path = "$env:Path;$InstallDir"
+finally {
+    # Cleanup temp directory
+    if (Test-Path $TempDir) {
+        Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
     }
 }
-
-# Verify
-$InstalledExe = Join-Path $InstallDir $FinalExeName
-Write-Info "Successfully installed $ExeName!"
-& $InstalledExe version
-
-Write-Host ""
-Write-Host "Restart your terminal or run:" -ForegroundColor Yellow
-Write-Host "  `$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User')"
 

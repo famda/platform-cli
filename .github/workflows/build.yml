@@ -74,7 +74,7 @@ jobs:
           echo "Injecting version: ${{ inputs.version }} (sha: ${{ inputs.git_sha }})"
           
           # Create a new _version.py with injected values
-          cat > "$VERSION_FILE" << 'EOF'
+          cat > "$VERSION_FILE" << EOF
           # This file is auto-generated during build
           __all__ = ["__version__", "__version_tuple__", "version", "version_tuple", "__commit_id__", "commit_id"]
           

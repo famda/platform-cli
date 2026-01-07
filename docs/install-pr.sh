@@ -15,6 +15,11 @@ PR_NUMBER=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --variant|-v)
+            if [ -z "${2-}" ] || [[ "$2" == -* ]]; then
+                echo "error: --variant requires a value"
+                echo "Usage: $0 <pr_number> [--variant <full|audio|video|document>]"
+                exit 1
+            fi
             VARIANT="$2"
             shift 2
             ;;

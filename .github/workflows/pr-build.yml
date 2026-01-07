@@ -1,10 +1,9 @@
 # PR build workflow - builds PRs and comments with install instructions
-# Uses pull_request_target for security with forks
 
 name: PR Build
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
 
