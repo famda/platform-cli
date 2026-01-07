@@ -31,47 +31,38 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       
-      # Install uv following official documentation
-      # https://docs.astral.sh/uv/guides/integration/github/
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       
-      # Install dependencies with uv
-      # Using --frozen to ensure reproducible builds from lockfile
-      # The editable semantics package version can differ due to dynamic versioning
       - name: Install dependencies
         run: uv sync --frozen --extra dev
       
-      # Run tests with pytest
-      # Note: This project doesn't currently have coverage tools configured,
-      # but the command structure is ready if pytest-cov is added later
       - name: Run tests
         run: uv run pytest tests/ -v
       
-      # Build the package to ensure it's distributable
-      # This catches any packaging issues early
       - name: Build package
         run: uv build
       
-      # Verify the built package can be installed
       - name: Verify package
         shell: bash
         run: |
           python -m pip install dist/*.whl
           semantics --help
 
-  # Build PyInstaller artifacts for each platform
-  # These artifacts will be used by the release workflow
+  # Build PyInstaller artifacts for each platform and variant
   build-artifacts:
-    name: Build ${{ matrix.platform }} artifact
+    name: Build ${{ matrix.variant }} on ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     needs: test
     
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        variant: [full, audio, video, document]
         include:
           - os: ubuntu-latest
             platform: linux
@@ -92,53 +83,38 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
       
-      # Install dependencies including pyinstaller from dev dependencies
-      # Using --frozen to ensure reproducible builds from lockfile
-      # The editable semantics package version can differ due to dynamic versioning
       - name: Install dependencies
         run: uv sync --frozen --extra dev
       
-      # Build with PyInstaller
       - name: Build with PyInstaller
-        run: uv run pyinstaller --onefile src/semantics/__main__.py --name semantics
+        run: uv run python build.py ${{ matrix.variant }}
       
-      # Create zip (Unix)
-      # Use platform-only naming so release workflow can add the correct version
       - name: Create zip (Unix)
         if: runner.os != 'Windows'
         run: |
           cd dist
-          zip semantics-${{ matrix.platform }}-x86_64.zip semantics
+          if [ "${{ matrix.variant }}" = "full" ]; then
+            BASENAME="semantics"
+          else
+            BASENAME="semantics-${{ matrix.variant }}"
+          fi
+          zip "${BASENAME}-${{ matrix.platform }}-x86_64.zip" "${BASENAME}"*
       
-      # Create zip (Windows)
       - name: Create zip (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
           cd dist
-          Compress-Archive -Path semantics.exe -DestinationPath semantics-${{ matrix.platform }}-x86_64.zip
+          if ("${{ matrix.variant }}" -eq "full") {
+            $basename = "semantics"
+          } else {
+            $basename = "semantics-${{ matrix.variant }}"
+          }
+          Compress-Archive -Path "${basename}.exe" -DestinationPath "${basename}-${{ matrix.platform }}-x86_64.zip"
       
-      # Upload artifact for release workflow
-      # Use platform-only naming to decouple from dynamic versioning
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semantics-${{ matrix.platform }}-x86_64
-          path: dist/semantics-${{ matrix.platform }}-x86_64.zip
+          name: ${{ matrix.variant == 'full' && 'semantics' || format('semantics-{0}', matrix.variant) }}-${{ matrix.platform }}-x86_64
+          path: dist/*-${{ matrix.platform }}-x86_64.zip
           retention-days: 7
-
-  # Optional: Add linting/formatting jobs if tools are added to dev dependencies
-  # lint:
-  #   name: Lint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.12"
-  #     - uses: astral-sh/setup-uv@v4
-  #       with:
-  #         enable-cache: true
-  #     - run: uv sync --locked --extra dev
-  #     - run: uv run ruff check .
-  #     - run: uv run black --check src tests
-  #     - run: uv run mypy src

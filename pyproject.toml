@@ -1,20 +1,42 @@
 [project]
 name = "semantics"
 dynamic = ["version"]
-description = "A semantic analysis CLI tool for processing multiple file types"
+description = "Process different file types with specialized AI handlers"
 readme = "README.md"
 authors = [
-    { name = "copilot-swe-agent[bot]", email = "198982749+Copilot@users.noreply.github.com" }
+    { name = "famda", email = "maintainer@semantics" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "click>=8.1.0",
+    "click-help-colors>=0.9.4",
+]
 
 [project.scripts]
 semantics = "semantics.cli:main"
 
 [project.optional-dependencies]
+audio = [
+    # Audio processing dependencies will go here
+    # Example: librosa, soundfile, numpy, whisper
+]
+video = [
+    # Video processing dependencies will go here
+    # Example: opencv-python, numpy, ultralytics
+]
+document = [
+    # Document processing dependencies will go here
+    # Example: pdf2image, pytesseract, pillow
+]
+all = [
+    "semantics[audio,video,document]",
+]
 dev = [
     "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-env>=1.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
     "pyinstaller>=6.0.0",
 ]
 
@@ -22,25 +44,46 @@ dev = [
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
-# Hatch version configuration for dynamic versioning from VCS (Git)
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.hooks.vcs]
+version-file = "src/semantics/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/semantics"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+# Required for pytest to discover tests in subdirectories with __init__.py
+norecursedirs = []
+markers = [
+    "build: marks tests that build and test PyInstaller executables (slow)",
+]
+# Prevent __pycache__ creation during tests
+env = [
+    "PYTHONDONTWRITEBYTECODE=1",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
 # Configuration for Python Semantic Release
-# This tool automates versioning based on Conventional Commits
 [tool.semantic_release]
 major_on_zero = true
 branch = "main"
 upload_to_vcs_release = true
 build_command = "pip install uv==0.5.11 && uv build"
 
-# Commit parser configuration for Conventional Commits
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["feat", "fix", "perf", "docs", "style", "refactor", "test", "build", "ci", "chore"]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
-
-# Changelog configuration
-[tool.semantic_release.changelog]
-changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = []

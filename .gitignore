@@ -58,3 +58,6 @@ htmlcov/
 dmypy.json
 .pytype/
 .pyre/
+
+# Auto-generated version file (hatch-vcs)
+src/semantics/_version.py

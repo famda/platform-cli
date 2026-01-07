@@ -1,7 +1,6 @@
-"""Main entry point for the semantics CLI."""
+"""Entry point for running semantics as a module."""
 
-import sys
 from semantics.cli import main
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
