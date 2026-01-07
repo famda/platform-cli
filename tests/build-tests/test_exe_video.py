@@ -23,18 +23,6 @@ def run_executable(exe_path: Path, args: list[str], timeout: int = 30) -> subpro
 class TestVideoExecution:
     """Test video processing functionality in built executables."""
 
-    def test_full_exe_video_transcribe(self, full_exe: Path, tmp_path: Path) -> None:
-        """Test video transcription works in full executable."""
-        input_file = tmp_path / "test.mp4"
-        input_file.write_text("dummy video content")
-        output_dir = tmp_path / "output"
-
-        result = run_executable(
-            full_exe, ["video", str(input_file), "-o", str(output_dir), "--transcribe"]
-        )
-        assert result.returncode == 0
-        assert "Transcribing" in result.stdout or "transcrib" in result.stdout.lower()
-
     def test_video_exe_transcribe(self, video_exe: Path, tmp_path: Path) -> None:
         """Test video transcription works in video executable."""
         input_file = tmp_path / "test.mp4"

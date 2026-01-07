@@ -2,11 +2,10 @@
 """Build script for creating PyInstaller executables.
 
 This script creates standalone executables for different variants:
-- semantics: Main entry point executable
+- semantics: Main entry point executable (launcher)
 - semantics-audio: Audio processing only
 - semantics-video: Video processing only
 - semantics-document: Document processing only
-- semantics-full: All modules bundled together
 
 Usage:
     python build.py all        # Build all variants
@@ -14,7 +13,6 @@ Usage:
     python build.py audio      # Build audio variant only
     python build.py video      # Build video variant only
     python build.py document   # Build document variant only
-    python build.py full       # Build full variant (all modules)
 """
 
 from __future__ import annotations
@@ -59,17 +57,6 @@ VARIANTS = {
             "semantics.modules.document.cli",
         ],
     },
-    "full": {
-        "modules": ["audio", "video", "document"],
-        "hidden_imports": [
-            "semantics.modules.audio",
-            "semantics.modules.audio.cli",
-            "semantics.modules.video",
-            "semantics.modules.video.cli",
-            "semantics.modules.document",
-            "semantics.modules.document.cli",
-        ],
-    },
 }
 
 
@@ -86,7 +73,7 @@ def build_variant(name: str) -> bool:
     """Build a specific variant using PyInstaller.
 
     Args:
-        name: The variant name ('launcher', 'audio', 'video', 'document', or 'full')
+        name: The variant name ('launcher', 'audio', 'video', or 'document')
 
     Returns:
         True if build succeeded, False otherwise
@@ -100,8 +87,6 @@ def build_variant(name: str) -> bool:
     # Determine executable name
     if name == "launcher":
         exe_name = "semantics"
-    elif name == "full":
-        exe_name = "semantics-full"
     else:
         exe_name = f"semantics-{name}"
 
@@ -187,7 +172,7 @@ def main() -> int:
 
     else:
         print(f"[ERROR] Unknown target: {target}")
-        print("Valid targets: all, clean, launcher, audio, video, document, full")
+        print("Valid targets: all, clean, launcher, audio, video, document")
         return 1
 
 

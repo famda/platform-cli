@@ -100,9 +100,13 @@ try {
     # Download and install components (silently)
     Install-Executable -ExeName "semantics" -FinalName "semantics.exe" -Silent
     
-    # Install the module variant
+    # Install the module variant(s)
     if ($Variant -eq "full") {
-        Install-Executable -ExeName "semantics-full" -FinalName "semantics-full.exe" -Silent
+        # For "full", install all individual modules
+        Write-Info "Installing all modules..."
+        Install-Executable -ExeName "semantics-audio" -FinalName "semantics-audio.exe" -Silent
+        Install-Executable -ExeName "semantics-video" -FinalName "semantics-video.exe" -Silent
+        Install-Executable -ExeName "semantics-document" -FinalName "semantics-document.exe" -Silent
     } else {
         Install-Executable -ExeName "semantics-$Variant" -FinalName "semantics-$Variant.exe" -Silent
     }

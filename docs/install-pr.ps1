@@ -104,10 +104,16 @@ try {
     $LauncherArtifact = "semantics-pr-$PRNumber-windows-$Arch"
     Install-Artifact -ArtifactName $LauncherArtifact -FinalName "semantics.exe"
     
-    # Install the module variant
+    # Install the module variant(s)
     if ($Variant -eq "full") {
-        $ModuleArtifact = "semantics-full-pr-$PRNumber-windows-$Arch"
-        Install-Artifact -ArtifactName $ModuleArtifact -FinalName "semantics-full.exe"
+        # For "full", install all individual modules
+        Write-Info "Installing all modules..."
+        $AudioArtifact = "semantics-audio-pr-$PRNumber-windows-$Arch"
+        Install-Artifact -ArtifactName $AudioArtifact -FinalName "semantics-audio.exe"
+        $VideoArtifact = "semantics-video-pr-$PRNumber-windows-$Arch"
+        Install-Artifact -ArtifactName $VideoArtifact -FinalName "semantics-video.exe"
+        $DocumentArtifact = "semantics-document-pr-$PRNumber-windows-$Arch"
+        Install-Artifact -ArtifactName $DocumentArtifact -FinalName "semantics-document.exe"
     } else {
         $ModuleArtifact = "semantics-$Variant-pr-$PRNumber-windows-$Arch"
         Install-Artifact -ArtifactName $ModuleArtifact -FinalName "semantics-$Variant.exe"

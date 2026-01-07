@@ -114,6 +114,8 @@ jobs:
             | `video` | Video processing only | `-Variant video` / `--variant video` |
             | `document` | Document processing only | `-Variant document` / `--variant document` |
 
+            **Note:** The `full` variant installs all individual module executables (audio, video, document) separately.
+
             </details>
 
             <details>
@@ -125,9 +127,11 @@ jobs:
 
             | Variant | Linux | macOS | Windows |
             |---------|-------|-------|---------|
-            | Full | `semantics-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+            | Launcher | `semantics-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
             | Audio | `semantics-audio-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-audio-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-audio-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
             | Video | `semantics-video-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-video-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-video-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
             | Document | `semantics-document-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-document-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-document-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+
+            **Note:** For `full` variant, download the launcher plus all three module variants (audio, video, document).
 
             </details>

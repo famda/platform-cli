@@ -23,18 +23,6 @@ def run_executable(exe_path: Path, args: list[str], timeout: int = 30) -> subpro
 class TestAudioExecution:
     """Test audio processing functionality in built executables."""
 
-    def test_full_exe_audio_transcribe(self, full_exe: Path, tmp_path: Path) -> None:
-        """Test audio transcription works in full executable."""
-        input_file = tmp_path / "test.wav"
-        input_file.write_text("dummy audio content")
-        output_dir = tmp_path / "output"
-
-        result = run_executable(
-            full_exe, ["audio", str(input_file), "-o", str(output_dir), "--transcribe"]
-        )
-        assert result.returncode == 0
-        assert "Transcribing" in result.stdout or "transcrib" in result.stdout.lower()
-
     def test_audio_exe_transcribe(self, audio_exe: Path, tmp_path: Path) -> None:
         """Test audio transcription works in audio executable."""
         input_file = tmp_path / "test.wav"

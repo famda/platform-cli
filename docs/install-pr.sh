@@ -156,10 +156,16 @@ info "Downloading..."
 LAUNCHER_ARTIFACT="semantics-pr-$PR_NUMBER-$PLATFORM-$ARCH"
 download_and_install "$LAUNCHER_ARTIFACT" "semantics"
 
-# Install the module variant
+# Install the module variant(s)
 if [ "$VARIANT" = "full" ]; then
-    MODULE_ARTIFACT="semantics-full-pr-$PR_NUMBER-$PLATFORM-$ARCH"
-    download_and_install "$MODULE_ARTIFACT" "semantics-full"
+    # For "full", install all individual modules
+    info "Installing all modules..."
+    AUDIO_ARTIFACT="semantics-audio-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$AUDIO_ARTIFACT" "semantics-audio"
+    VIDEO_ARTIFACT="semantics-video-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$VIDEO_ARTIFACT" "semantics-video"
+    DOCUMENT_ARTIFACT="semantics-document-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$DOCUMENT_ARTIFACT" "semantics-document"
 else
     MODULE_ARTIFACT="semantics-$VARIANT-pr-$PR_NUMBER-$PLATFORM-$ARCH"
     download_and_install "$MODULE_ARTIFACT" "semantics-$VARIANT"

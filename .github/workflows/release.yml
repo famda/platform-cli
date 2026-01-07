@@ -87,19 +87,6 @@ jobs:
             target: semantics
             platform: macos
             arch: arm64
-          # Full version (all modules bundled) - all platforms
-          - artifact: semantics-full-linux-x86_64
-            target: semantics-full
-            platform: linux
-            arch: x86_64
-          - artifact: semantics-full-windows-x86_64
-            target: semantics-full
-            platform: windows
-            arch: x86_64
-          - artifact: semantics-full-macos-arm64
-            target: semantics-full
-            platform: macos
-            arch: arm64
           # Audio variant - all platforms
           - artifact: semantics-audio-linux-x86_64
             target: semantics-audio

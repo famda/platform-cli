@@ -23,17 +23,6 @@ def run_executable(exe_path: Path, args: list[str], timeout: int = 30) -> subpro
 class TestExecutableHelp:
     """Test --help works for all executable variants."""
 
-    def test_full_exe_help(self, full_exe: Path) -> None:
-        """Test semantics --help shows all subcommands."""
-        result = run_executable(full_exe, ["--help"])
-        assert result.returncode == 0
-        assert "Unified interface for media intelligence" in result.stdout
-        # Check Commands section has all modules
-        commands_section = result.stdout.split("Commands:")[1] if "Commands:" in result.stdout else ""
-        assert "audio" in commands_section
-        assert "video" in commands_section
-        assert "document" in commands_section
-
     def test_audio_exe_help(self, audio_exe: Path) -> None:
         """Test semantics-audio --help shows audio subcommand only."""
         result = run_executable(audio_exe, ["--help"])
@@ -117,15 +106,3 @@ class TestDynamicHelp:
             assert "--extract-metadata" not in examples_section
             # Should NOT have video examples
             assert "--detect-objects" not in examples_section
-
-    def test_full_exe_help_has_all_examples(self, full_exe: Path) -> None:
-        """Test full executable help contains all module examples."""
-        result = run_executable(full_exe, ["--help"])
-        assert result.returncode == 0
-
-        if "Examples:" in result.stdout:
-            examples_section = result.stdout.split("Examples:")[1].split("Or use explicit")[0]
-            # Should have examples for all modules
-            assert "input.wav" in examples_section
-            assert "input.mp4" in examples_section
-            assert "document.pdf" in examples_section

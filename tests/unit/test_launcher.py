@@ -229,42 +229,36 @@ class TestGenerateHelpText:
 class TestGetVirtualModules:
     """Tests for get_virtual_modules function."""
 
-    def test_expands_full_to_individual_modules(self) -> None:
-        """Test that 'full' is expanded to audio, video, document modules."""
-        full_exe = Path("/bin/semantics-full")
-        discovered = {"full": full_exe}
-
-        result = launcher.get_virtual_modules(discovered)
-
-        # Should have audio, video, document pointing to full
-        assert "audio" in result
-        assert "video" in result
-        assert "document" in result
-        assert result["audio"] == full_exe
-        assert result["video"] == full_exe
-        assert result["document"] == full_exe
-        # 'full' should be hidden from user
-        assert "full" not in result
-
-    def test_does_not_override_existing_modules(self) -> None:
-        """Test that existing modules are not overridden by full expansion."""
-        full_exe = Path("/bin/semantics-full")
+    def test_returns_discovered_modules_unchanged(self) -> None:
+        """Test that get_virtual_modules returns discovered modules unchanged."""
         audio_exe = Path("/bin/semantics-audio")
-        discovered = {"full": full_exe, "audio": audio_exe}
+        video_exe = Path("/bin/semantics-video")
+        discovered = {"audio": audio_exe, "video": video_exe}
 
         result = launcher.get_virtual_modules(discovered)
 
-        # audio should still point to its own executable
-        assert result["audio"] == audio_exe
-        # video and document should point to full
-        assert result["video"] == full_exe
-        assert result["document"] == full_exe
+        # Should return the same modules
+        assert result == {"audio": audio_exe, "video": video_exe}
 
-    def test_no_full_returns_unchanged(self) -> None:
-        """Test that without 'full', modules are returned unchanged."""
+    def test_returns_empty_dict_for_no_modules(self) -> None:
+        """Test that empty discovered modules returns empty result."""
+        discovered = {}
+
+        result = launcher.get_virtual_modules(discovered)
+
+        assert result == {}
+
+    def test_returns_all_modules_separately(self) -> None:
+        """Test that all modules are returned separately (no expansion)."""
         audio_exe = Path("/bin/semantics-audio")
-        discovered = {"audio": audio_exe}
+        video_exe = Path("/bin/semantics-video")
+        document_exe = Path("/bin/semantics-document")
+        discovered = {"audio": audio_exe, "video": video_exe, "document": document_exe}
 
         result = launcher.get_virtual_modules(discovered)
 
-        assert result == {"audio": audio_exe}
+        assert result == {
+            "audio": audio_exe,
+            "video": video_exe,
+            "document": document_exe,
+        }

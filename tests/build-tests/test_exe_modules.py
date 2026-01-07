@@ -23,12 +23,6 @@ def run_executable(exe_path: Path, args: list[str], timeout: int = 30) -> subpro
 class TestModuleAvailability:
     """Test that each variant has only its expected modules."""
 
-    def test_full_exe_has_all_modules(self, full_exe: Path) -> None:
-        """Test full executable can access all module subcommands."""
-        for module in ["audio", "video", "document"]:
-            result = run_executable(full_exe, [module, "--help"])
-            assert result.returncode == 0, f"Module {module} should be available"
-
     def test_audio_exe_has_audio_only(self, audio_exe: Path) -> None:
         """Test audio executable has audio module."""
         result = run_executable(audio_exe, ["audio", "--help"])

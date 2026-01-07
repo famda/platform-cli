@@ -147,9 +147,13 @@ download_and_install() {
 # Download and install components (silently for internal components)
 download_and_install "semantics" "semantics" "true"
 
-# Install the module variant
+# Install the module variant(s)
 if [ "$VARIANT" = "full" ]; then
-    download_and_install "semantics-full" "semantics-full" "true"
+    # For "full", install all individual modules
+    info "Installing all modules..."
+    download_and_install "semantics-audio" "semantics-audio" "true"
+    download_and_install "semantics-video" "semantics-video" "true"
+    download_and_install "semantics-document" "semantics-document" "true"
 else
     download_and_install "semantics-$VARIANT" "semantics-$VARIANT" "true"
 fi
