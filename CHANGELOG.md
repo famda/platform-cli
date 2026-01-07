@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v0.1.1 (2026-01-07)
+
+### Bug Fixes
+
+* fix: update install scripts to use --version flag for verification (#18) ([`b64dcef`](https://github.com/famda/platform-cli/commit/b64dcef36eac387887e1a464f1e0247af57b4fa0))
+
+
 ## v0.1.0 (2026-01-07)
 
 ### Features
