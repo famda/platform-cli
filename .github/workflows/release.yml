@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Full version - all platforms
+          # Launcher (unified semantics command) - all platforms
           - artifact: semantics-linux-x86_64
             target: semantics
             platform: linux
@@ -85,6 +85,19 @@ jobs:
             arch: x86_64
           - artifact: semantics-macos-arm64
             target: semantics
+            platform: macos
+            arch: arm64
+          # Full version (all modules bundled) - all platforms
+          - artifact: semantics-full-linux-x86_64
+            target: semantics-full
+            platform: linux
+            arch: x86_64
+          - artifact: semantics-full-windows-x86_64
+            target: semantics-full
+            platform: windows
+            arch: x86_64
+          - artifact: semantics-full-macos-arm64
+            target: semantics-full
             platform: macos
             arch: arm64
           # Audio variant - all platforms

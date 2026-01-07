@@ -45,14 +45,25 @@ semantics video clip.mp4 -o ./output --detect-objects
 
 ## Variants
 
-Choose the variant that fits your needs:
+The installer always includes the unified `semantics` launcher. Choose which module(s) to install:
 
-| Variant | Executable | Includes |
-|---------|------------|----------|
-| **Full** | `semantics` | All modules (audio, video, document) |
-| **Audio** | `semantics-audio` | Audio transcription and metadata extraction |
-| **Video** | `semantics-video` | Video transcription and object detection |
-| **Document** | `semantics-document` | PDF and image text extraction |
+| Variant | Executables Installed | Description |
+|---------|----------------------|-------------|
+| **Full** | `semantics` + `semantics-full` | All modules bundled together |
+| **Audio** | `semantics` + `semantics-audio` | Audio transcription and metadata extraction |
+| **Video** | `semantics` + `semantics-video` | Video transcription and object detection |
+| **Document** | `semantics` + `semantics-document` | PDF and image text extraction |
+
+All variants use the same unified `semantics` command:
+
+```bash
+# Works with any variant installed
+semantics audio input.wav -o ./output --transcribe
+semantics video video.mp4 -o ./output --detect-objects
+semantics document scan.pdf -o ./output --extract-text
+```
+
+You can install multiple modules - the launcher discovers all installed modules automatically.
 
 ## Usage
 

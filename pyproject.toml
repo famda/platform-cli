@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 semantics = "semantics.cli:main"
+semantics-launcher = "semantics.launcher:main"
 
 [project.optional-dependencies]
 audio = [

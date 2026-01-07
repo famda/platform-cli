@@ -53,13 +53,6 @@ case $VARIANT in
         ;;
 esac
 
-# Determine executable name
-if [ "$VARIANT" = "full" ]; then
-    EXE_NAME="semantics"
-else
-    EXE_NAME="semantics-$VARIANT"
-fi
-
 info() { echo -e "\033[32m==>\033[0m $1"; }
 warn() { echo -e "\033[33mwarning:\033[0m $1"; }
 error() { echo -e "\033[31merror:\033[0m $1"; exit 1; }
@@ -74,7 +67,7 @@ if ! gh auth status &> /dev/null; then
     error "GitHub CLI not authenticated. Run 'gh auth login' first."
 fi
 
-info "Installing $EXE_NAME from PR #$PR_NUMBER..."
+info "Installing semantics with $VARIANT module from PR #$PR_NUMBER..."
 
 # Detect OS and architecture
 OS="$(uname -s)"
@@ -114,48 +107,59 @@ if [ -z "$RUN_ID" ]; then
 fi
 info "Found workflow run: $RUN_ID"
 
-# Determine artifact name
-ARTIFACT_NAME="$EXE_NAME-pr-$PR_NUMBER-$PLATFORM-$ARCH"
-
 # Create temp directory
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
 
-# Download artifact using gh
-info "Downloading artifact: $ARTIFACT_NAME..."
-cd "$TEMP_DIR"
-if ! gh run download "$RUN_ID" --repo "$REPO" --name "$ARTIFACT_NAME"; then
-    error "Failed to download artifact. Make sure the PR build completed successfully."
-fi
-
-# Find and extract the zip
-ZIP_FILE=$(find "$TEMP_DIR" -name "*.zip" | head -1)
-if [ -z "$ZIP_FILE" ]; then
-    error "No zip file found in downloaded artifact"
-fi
-
-info "Extracting..."
-unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
-
-# Find the executable
-EXTRACTED_EXE=$(find "$TEMP_DIR" -type f -name "semantics*" ! -name "*.zip" | head -1)
-if [ -z "$EXTRACTED_EXE" ]; then
-    error "Could not find executable in downloaded archive"
-fi
-
-# Install
-info "Installing to $INSTALL_DIR..."
+# Create install directory
 mkdir -p "$INSTALL_DIR"
 
-# Determine final executable name
-if [ "$VARIANT" = "full" ]; then
-    FINAL_EXE_NAME="semantics"
-else
-    FINAL_EXE_NAME="semantics-$VARIANT"
-fi
+# Function to download and install an artifact
+download_and_install() {
+    local artifact_name="$1"
+    local final_name="$2"
+    
+    info "Downloading artifact: $artifact_name..."
+    local extract_dir="$TEMP_DIR/extract_$final_name"
+    mkdir -p "$extract_dir"
+    
+    cd "$TEMP_DIR"
+    if ! gh run download "$RUN_ID" --repo "$REPO" --name "$artifact_name" --dir "$extract_dir"; then
+        error "Failed to download artifact '$artifact_name'. Make sure the PR build completed successfully."
+    fi
+    
+    # Find and extract the zip
+    ZIP_FILE=$(find "$extract_dir" -name "*.zip" | head -1)
+    if [ -z "$ZIP_FILE" ]; then
+        error "No zip file found in downloaded artifact for $artifact_name"
+    fi
+    
+    info "Extracting $artifact_name..."
+    unzip -q -o "$ZIP_FILE" -d "$extract_dir"
+    
+    # Find the executable
+    EXTRACTED_EXE=$(find "$extract_dir" -type f -name "semantics*" ! -name "*.zip" | head -1)
+    if [ -z "$EXTRACTED_EXE" ]; then
+        error "Could not find executable in downloaded archive for $artifact_name"
+    fi
+    
+    mv "$EXTRACTED_EXE" "$INSTALL_DIR/$final_name"
+    chmod +x "$INSTALL_DIR/$final_name"
+    info "Installed: $final_name"
+}
 
-mv "$EXTRACTED_EXE" "$INSTALL_DIR/$FINAL_EXE_NAME"
-chmod +x "$INSTALL_DIR/$FINAL_EXE_NAME"
+# Always install the launcher first
+LAUNCHER_ARTIFACT="semantics-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+download_and_install "$LAUNCHER_ARTIFACT" "semantics"
+
+# Install the module variant
+if [ "$VARIANT" = "full" ]; then
+    MODULE_ARTIFACT="semantics-full-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$MODULE_ARTIFACT" "semantics-full"
+else
+    MODULE_ARTIFACT="semantics-$VARIANT-pr-$PR_NUMBER-$PLATFORM-$ARCH"
+    download_and_install "$MODULE_ARTIFACT" "semantics-$VARIANT"
+fi
 
 # Add to PATH if not already there
 add_to_path() {
@@ -204,9 +208,15 @@ add_to_path "$HOME/.profile"
 export PATH="$INSTALL_DIR:$PATH"
 
 # Verify
-info "Successfully installed $EXE_NAME from PR #$PR_NUMBER!"
-"$INSTALL_DIR/$FINAL_EXE_NAME" --version
+info "Installation complete!"
+"$INSTALL_DIR/semantics" --version
+
+echo ""
+info "Installed executables:"
+ls -la "$INSTALL_DIR"/semantics* 2>/dev/null || true
 
 echo ""
 echo -e "\033[33mRestart your terminal or run:\033[0m"
 echo "  export PATH=\"\$HOME/.semantics/bin:\$PATH\""
+echo ""
+echo "Then use: semantics $VARIANT --help"
