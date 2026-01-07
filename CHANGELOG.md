@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.1.3 (2026-01-07)
+
+### Bug Fixes
+
+* fix: invisible launcher (#21)
+
+* fix: make launcher invisible to end users
+
+* fix: properly delegate --help to module executables by disabling Click auto-help ([`6357823`](https://github.com/famda/platform-cli/commit/6357823ac6c45034c46f85b26ac275d5545b6e92))
+
+
 ## v0.1.2 (2026-01-07)
 
 ### Bug Fixes
