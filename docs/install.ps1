@@ -5,7 +5,7 @@
 
 param(
     [switch]$Prerelease,
-    [ValidateSet("audio", "video", "document")]
+    [ValidateSet("all", "audio", "video", "document")]
     [string]$Variant = ""
 )
 
