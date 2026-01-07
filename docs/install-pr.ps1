@@ -6,7 +6,7 @@
 param(
     [Parameter(Mandatory=$true)]
     [int]$PRNumber,
-    [ValidateSet("audio", "video", "document")]
+    [ValidateSet("all", "audio", "video", "document")]
     [string]$Variant = ""
 )
 
