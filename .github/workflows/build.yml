@@ -1,0 +1,135 @@
+# Reusable build workflow for creating PyInstaller executables
+# Called by: ci.yml, dev-build.yml, pr-build.yml
+
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version string to inject into builds"
+        required: true
+        type: string
+      git_sha:
+        description: "Git SHA for version tracking"
+        required: true
+        type: string
+      ref:
+        description: "Git ref to checkout"
+        required: false
+        type: string
+        default: ""
+      artifact_suffix:
+        description: "Suffix to add to artifact names (e.g., 'dev', 'rc', 'pr-123')"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  build:
+    name: Build ${{ matrix.variant }} on ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        variant: [full, audio, video, document]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Inject version into _version.py
+        shell: bash
+        run: |
+          VERSION_FILE="src/semantics/_version.py"
+          echo "Injecting version: ${{ inputs.version }} (sha: ${{ inputs.git_sha }})"
+          
+          # Create a new _version.py with injected values
+          cat > "$VERSION_FILE" << 'EOF'
+          # This file is auto-generated during build
+          __all__ = ["__version__", "__version_tuple__", "version", "version_tuple", "__commit_id__", "commit_id"]
+          
+          __version__ = version = "${{ inputs.version }}"
+          __version_tuple__ = version_tuple = tuple(__version__.replace("-", ".").replace("+", ".").split("."))
+          __commit_id__ = commit_id = "${{ inputs.git_sha }}"
+          EOF
+
+      - name: Build with PyInstaller
+        run: uv run python build.py ${{ matrix.variant }}
+
+      - name: Determine artifact name
+        id: artifact
+        shell: bash
+        run: |
+          if [ "${{ matrix.variant }}" = "full" ]; then
+            BASENAME="semantics"
+          else
+            BASENAME="semantics-${{ matrix.variant }}"
+          fi
+          
+          # Add suffix if provided (e.g., -dev, -rc, -pr-123)
+          if [ -n "${{ inputs.artifact_suffix }}" ]; then
+            ARTIFACT_NAME="${BASENAME}-${{ inputs.artifact_suffix }}-${{ matrix.platform }}-${{ matrix.arch }}"
+          else
+            ARTIFACT_NAME="${BASENAME}-${{ matrix.platform }}-${{ matrix.arch }}"
+          fi
+          
+          echo "basename=$BASENAME" >> $GITHUB_OUTPUT
+          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create zip (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd dist
+          BASENAME="${{ steps.artifact.outputs.basename }}"
+          ZIPNAME="${{ steps.artifact.outputs.artifact_name }}.zip"
+          chmod +x "${BASENAME}"
+          zip "$ZIPNAME" "${BASENAME}"
+          echo "Created: $ZIPNAME"
+
+      - name: Create zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd dist
+          $basename = "${{ steps.artifact.outputs.basename }}"
+          $zipname = "${{ steps.artifact.outputs.artifact_name }}.zip"
+          Compress-Archive -Path "${basename}.exe" -DestinationPath $zipname
+          Write-Host "Created: $zipname"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.artifact_name }}
+          path: dist/${{ steps.artifact.outputs.artifact_name }}.zip
+          retention-days: 14

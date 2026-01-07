@@ -1,0 +1,115 @@
+# PR build workflow - builds PRs and comments with install instructions
+# Uses pull_request_target for security with forks
+
+name: PR Build
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Calculate version for this PR
+  version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+
+    steps:
+      - name: Calculate version
+        id: version
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+          VERSION="0.0.${PR_NUMBER}-${SHORT_SHA}"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated version: $VERSION"
+
+  # Build all variants
+  build:
+    name: Build
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      git_sha: ${{ github.event.pull_request.head.sha }}
+      ref: ${{ github.event.pull_request.head.ref }}
+      artifact_suffix: pr-${{ github.event.pull_request.number }}
+
+  # Comment on PR with install instructions
+  comment:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: [version, build]
+
+    steps:
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "<!-- semantics-pr-build -->"
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            <!-- semantics-pr-build -->
+            ## 🚀 PR Build Ready
+
+            **Version:** `${{ needs.version.outputs.version }}`
+            **Commit:** `${{ needs.version.outputs.short_sha }}`
+
+            ### Install this PR build
+
+            You can test this PR by downloading the artifacts from the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+
+            #### Using GitHub CLI (recommended)
+
+            **Windows (PowerShell)**
+            ```powershell
+            irm https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.ps1 | iex
+            # Then run:
+            Install-SemanticsPR -PRNumber ${{ github.event.pull_request.number }}
+            ```
+
+            **Linux/macOS (Bash)**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/docs/install-pr.sh | bash -s -- ${{ github.event.pull_request.number }}
+            ```
+
+            #### Manual download
+
+            1. Go to [Actions → PR Build → Run #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            2. Download the artifact for your platform (e.g., `semantics-pr-${{ github.event.pull_request.number }}-windows-x86_64`)
+            3. Extract and run
+
+            ---
+            <details>
+            <summary>Available artifacts</summary>
+
+            | Variant | Linux | macOS | Windows |
+            |---------|-------|-------|---------|
+            | Full | `semantics-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+            | Audio | `semantics-audio-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-audio-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-audio-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+            | Video | `semantics-video-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-video-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-video-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+            | Document | `semantics-document-pr-${{ github.event.pull_request.number }}-linux-x86_64` | `semantics-document-pr-${{ github.event.pull_request.number }}-macos-arm64` | `semantics-document-pr-${{ github.event.pull_request.number }}-windows-x86_64` |
+
+            </details>

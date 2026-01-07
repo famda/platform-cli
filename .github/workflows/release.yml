@@ -22,16 +22,16 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    
+
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       !contains(github.event.workflow_run.head_commit.message, 'chore(release)')
-    
+
     outputs:
       released: ${{ steps.release.outputs.released }}
       version: ${{ steps.release.outputs.version }}
       tag: ${{ steps.release.outputs.tag }}
-    
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -39,12 +39,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.workflow_run.head_branch }}
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
+
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v9.12.0
@@ -56,9 +56,9 @@ jobs:
     name: Attach ${{ matrix.artifact }} to release
     runs-on: ubuntu-latest
     needs: release
-    
+
     if: needs.release.outputs.released == 'true'
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -67,43 +67,55 @@ jobs:
           - artifact: semantics-linux-x86_64
             target: semantics
             platform: linux
+            arch: x86_64
           - artifact: semantics-windows-x86_64
             target: semantics
             platform: windows
-          - artifact: semantics-macos-x86_64
+            arch: x86_64
+          - artifact: semantics-macos-arm64
             target: semantics
             platform: macos
+            arch: arm64
           # Audio variant - all platforms
           - artifact: semantics-audio-linux-x86_64
             target: semantics-audio
             platform: linux
+            arch: x86_64
           - artifact: semantics-audio-windows-x86_64
             target: semantics-audio
             platform: windows
-          - artifact: semantics-audio-macos-x86_64
+            arch: x86_64
+          - artifact: semantics-audio-macos-arm64
             target: semantics-audio
             platform: macos
+            arch: arm64
           # Video variant - all platforms
           - artifact: semantics-video-linux-x86_64
             target: semantics-video
             platform: linux
+            arch: x86_64
           - artifact: semantics-video-windows-x86_64
             target: semantics-video
             platform: windows
-          - artifact: semantics-video-macos-x86_64
+            arch: x86_64
+          - artifact: semantics-video-macos-arm64
             target: semantics-video
             platform: macos
+            arch: arm64
           # Document variant - all platforms
           - artifact: semantics-document-linux-x86_64
             target: semantics-document
             platform: linux
+            arch: x86_64
           - artifact: semantics-document-windows-x86_64
             target: semantics-document
             platform: windows
-          - artifact: semantics-document-macos-x86_64
+            arch: x86_64
+          - artifact: semantics-document-macos-arm64
             target: semantics-document
             platform: macos
-    
+            arch: arm64
+
     steps:
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v6
@@ -115,16 +127,17 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow_conclusion: success
           check_artifacts: true
-      
+
       - name: Rename artifact with version
         run: |
           cd artifacts
           for f in *.zip; do
-            newname="${{ matrix.target }}-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-x86_64.zip"
+            # Release naming: semantics-v0.1.0-linux-x86_64.zip
+            newname="${{ matrix.target }}-v${{ needs.release.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.zip"
             mv "$f" "$newname"
             echo "Renamed to: $newname"
           done
-      
+
       - name: Upload artifact to release
         uses: softprops/action-gh-release@v2
         with:

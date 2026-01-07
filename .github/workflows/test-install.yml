@@ -1,0 +1,160 @@
+# Test install scripts workflow
+# Runs when install scripts are modified to verify they work
+
+name: Test Install Scripts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/install.sh"
+      - "docs/install.ps1"
+      - ".github/workflows/test-install.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/install.sh"
+      - "docs/install.ps1"
+      - ".github/workflows/test-install.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-powershell:
+    name: Test PowerShell (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        # Could add ubuntu-latest and macos-latest if pwsh is needed there
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          # Parse the script to check for syntax errors
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "${{ github.workspace }}/docs/install.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            Write-Host "Syntax errors found:"
+            $errors | ForEach-Object { Write-Host $_.ToString() }
+            exit 1
+          }
+          Write-Host "PowerShell script syntax is valid"
+
+      - name: Test help output (dry run)
+        shell: pwsh
+        run: |
+          # Source the script and verify parameters are accepted
+          $scriptContent = Get-Content -Path "${{ github.workspace }}/docs/install.ps1" -Raw
+          
+          # Check that required parameters exist
+          if ($scriptContent -notmatch '\$Prerelease') {
+            Write-Host "Missing -Prerelease parameter"
+            exit 1
+          }
+          if ($scriptContent -notmatch '\$Variant') {
+            Write-Host "Missing -Variant parameter"
+            exit 1
+          }
+          
+          Write-Host "PowerShell script parameters validated"
+
+  test-bash:
+    name: Test Bash (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x docs/install.sh
+
+      - name: Validate Bash syntax
+        run: |
+          # Check syntax without executing
+          bash -n docs/install.sh
+          echo "Bash script syntax is valid"
+
+      - name: Test help output (with invalid args)
+        run: |
+          # The script should fail gracefully with unknown options
+          if docs/install.sh --invalid-option 2>&1 | grep -q "Unknown option"; then
+            echo "Script correctly handles unknown options"
+          else
+            echo "Script should reject unknown options"
+            exit 1
+          fi
+
+      - name: Test variant validation
+        run: |
+          # The script should reject invalid variants
+          if docs/install.sh --variant invalid 2>&1 | grep -qi "invalid"; then
+            echo "Script correctly validates variant parameter"
+          else
+            echo "Script should validate variant parameter"
+            exit 1
+          fi
+
+  test-pr-scripts:
+    name: Test PR Install Scripts
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Validate PR PowerShell script syntax
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "${{ github.workspace }}/docs/install-pr.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            Write-Host "Syntax errors found:"
+            $errors | ForEach-Object { Write-Host $_.ToString() }
+            exit 1
+          }
+          Write-Host "PR PowerShell script syntax is valid"
+
+      - name: Validate PR Bash script syntax
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x docs/install-pr.sh
+          bash -n docs/install-pr.sh
+          echo "PR Bash script syntax is valid"
+
+      - name: Test PR script usage message
+        if: runner.os != 'Windows'
+        run: |
+          # Running without arguments should show usage
+          if docs/install-pr.sh 2>&1 | grep -q "Usage"; then
+            echo "Script correctly shows usage when no PR number provided"
+          else
+            echo "Script should show usage message"
+            exit 1
+          fi
