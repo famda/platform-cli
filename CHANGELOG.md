@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## v0.1.4 (2026-01-07)
+
+### Bug Fixes
+
+* fix: Remove semantics-full executable, install individual modules by default (#23)
+
+
+* fix: Remove 'full' executable variant and update install scripts to download individual modules
+
+* fix: Update install scripts to default to all modules and add per-module uv.lock files ([`9b0a7d3`](https://github.com/famda/platform-cli/commit/9b0a7d3b97dde3e318c7cfac2943f78805042163))
+
+
 ## v0.1.3 (2026-01-07)
 
 ### Bug Fixes
