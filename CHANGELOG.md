@@ -1,6 +1,13 @@
 # CHANGELOG
 
 
+## v0.1.5 (2026-01-08)
+
+### Bug Fixes
+
+* fix: update build and install scripts for improved dependency management and validation ([`8834b80`](https://github.com/famda/platform-cli/commit/8834b80808e8f83bdefd5c71a2f04a0c669c47e8))
+
+
 ## v0.1.4 (2026-01-07)
 
 ### Bug Fixes
