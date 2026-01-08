@@ -65,7 +65,15 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        run: uv sync --frozen --extra dev
+        shell: bash
+        run: |
+          if [ "${{ matrix.variant }}" = "launcher" ]; then
+            # Launcher needs all module dependencies for discovery/validation
+            uv sync --frozen --extra dev --extra all
+          else
+            # Module variants only need their specific dependencies
+            uv sync --frozen --extra dev --extra ${{ matrix.variant }}
+          fi
 
       - name: Inject version into _version.py
         shell: bash

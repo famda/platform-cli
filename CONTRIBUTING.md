@@ -143,10 +143,10 @@ The project uses PyInstaller to create standalone executables.
 python build.py all
 
 # Build specific variant
+python build.py launcher
 python build.py audio
 python build.py video
 python build.py document
-python build.py full
 
 # Clean build artifacts
 python build.py clean
@@ -156,7 +156,7 @@ python build.py clean
 
 | Variant | Command | Includes |
 |---------|---------|----------|
-| Full | `python build.py full` | All modules |
+| Launcher | `python build.py launcher` | Entry point that discovers module executables |
 | Audio | `python build.py audio` | Audio module only |
 | Video | `python build.py video` | Video module only |
 | Document | `python build.py document` | Document module only |
@@ -222,6 +222,51 @@ uv run black src/ tests/
 # Lint code
 uv run ruff check src/ tests/
 ```
+
+## Dependency Management
+
+### Single Lock File Strategy
+
+This project uses a **single `pyproject.toml` at the root** with optional dependencies per module. All dependencies are locked in the root `uv.lock` file.
+
+```toml
+# pyproject.toml structure
+[project.optional-dependencies]
+audio = ["openai-whisper", "librosa"]      # Audio module deps
+video = ["ultralytics", "opencv-python"]   # Video module deps
+document = ["pdf2image", "pytesseract"]    # Document module deps
+all = ["semantics[audio,video,document]"]  # All modules
+dev = ["pytest", "black", "ruff", ...]     # Development tools
+```
+
+### Adding New Dependencies
+
+1. Add the dependency to the appropriate optional-dependencies group in `pyproject.toml`
+2. Regenerate the lock file: `uv lock`
+3. Install locally: `uv sync --extra <module>`
+4. Commit both `pyproject.toml` and `uv.lock`
+
+### Module Isolation
+
+Each module variant is built with only its own dependencies:
+
+- **CI builds** use `uv sync --extra dev --extra <module>` per variant
+- **Launcher** uses `uv sync --extra dev --extra all` for validation
+- **PyInstaller** bundles only the resolved dependencies for that variant
+
+This ensures:
+- Module executables are smaller (no unused dependencies)
+- Future dependency conflicts are isolated per module
+- Users download only what they need
+
+### Shared Utilities (core/)
+
+The `src/semantics/core/` folder contains shared utilities used by all modules:
+
+- `path.py` - Path and file handling utilities
+- Future: logging, configuration, common helpers
+
+Core utilities should have minimal dependencies (ideally only stdlib + click).
 
 ## Pull Request Guidelines
 

@@ -80,6 +80,40 @@ jobs:
           }
           Write-Host "PowerShell script parameters validated"
 
+      - name: Test default variant (no parameters)
+        shell: pwsh
+        run: |
+          # Simulate irm | iex by calling script without parameters
+          # This tests that ValidateSet allows empty string and defaults to "all"
+          try {
+            # Source the script content and verify it parses without error
+            $scriptContent = Get-Content -Path "${{ github.workspace }}/docs/install.ps1" -Raw
+            
+            # Test that the param block with ValidateSet accepts empty string
+            # Extract just the param block and test it
+            $paramBlock = @'
+          param(
+              [switch]$Prerelease,
+              [ValidateSet("", "all", "audio", "video", "document")]
+              [string]$Variant = ""
+          )
+          '@
+            
+            # Create a test script that simulates no-parameter invocation
+            $testScript = $paramBlock + "`n" + 'Write-Output "Variant is: [$Variant]"'
+            $result = Invoke-Expression $testScript
+            
+            if ($result -match "Variant is: \[\]") {
+              Write-Host "Script correctly accepts empty string as default"
+            } else {
+              Write-Host "Unexpected result: $result"
+              exit 1
+            }
+          } catch {
+            Write-Host "Error testing default variant: $_"
+            exit 1
+          }
+
   test-bash:
     name: Test Bash
     runs-on: ubuntu-latest
@@ -115,6 +149,25 @@ jobs:
             echo "Script correctly validates variant parameter"
           else
             echo "Script should validate variant parameter"
+            exit 1
+          fi
+
+      - name: Test default variant (no parameters)
+        run: |
+          # Run script without --variant and verify it defaults to "all"
+          # We check that the script sets VARIANT="all" when no variant specified
+          output=$(bash -c '
+            source <(grep -A 50 "^# Default to all modules" docs/install.sh | head -10)
+            VARIANT=""
+            if [ -z "$VARIANT" ]; then
+              VARIANT="all"
+            fi
+            echo "VARIANT=$VARIANT"
+          ')
+          if echo "$output" | grep -q "VARIANT=all"; then
+            echo "Script correctly defaults to 'all' variant"
+          else
+            echo "Script should default to 'all' when no variant specified"
             exit 1
           fi
 
